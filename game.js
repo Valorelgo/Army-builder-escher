@@ -1,0 +1,1859 @@
+// ==========================================
+// GAME STATE MANAGEMENT
+// ==========================================
+let currentGameRoster = [];
+let gameTactics = [];
+
+const CUMULATIVE_CONDITIONS = [
+    "Blessé", "Folie", "Entoilé", "Redoutable", "Frénésie", "Haine", "Intoxiqué", "Terrifiant"
+];
+
+const PERMANENT_INJURIES = [
+    "+1 XP",
+    "+2 XP",
+    "+3 XP",
+    "Gagne Haine",
+    "Condition Redoutable",
+    "+1 Ld",
+    "Aucune conséquence",
+    "Recovery (Absente prochaine partie)",
+    "Recovery & -1 BS",
+    "Recovery & -1 WS",
+    "Recovery & -1 M",
+    "Recovery & -1 S",
+    "Recovery & -1 T",
+    "Recovery & -1 Ld",
+    "Capturé",
+    "Blessure critique",
+    "Mort"
+];
+
+// ==========================================
+// PALIERS D'EXPÉRIENCE & RANGS
+// ==========================================
+function getFighterRank(xp) {
+    if (xp < 1) return 0;
+    if (xp <= 3) return 1;
+    if (xp <= 6) return 2;
+    if (xp <= 9) return 3;
+    if (xp <= 12) return 4;
+    if (xp <= 18) return 5;
+    if (xp <= 24) return 6;
+    if (xp <= 30) return 7;
+    if (xp <= 36) return 8;
+    if (xp <= 48) return 9;
+    if (xp <= 60) return 10;
+    if (xp <= 72) return 11;
+    if (xp <= 84) return 12;
+    if (xp <= 96) return 13;
+    if (xp <= 108) return 14;
+    if (xp <= 120) return 15;
+    if (xp <= 132) return 16;
+    if (xp <= 156) return 17;
+    if (xp <= 180) return 18;
+    if (xp <= 204) return 19;
+    if (xp <= 228) return 20;
+    return 21;
+}
+
+function getPendingAdvances(m) {
+    let currentXP = getFighterXP(m);
+    let currentRank = getFighterRank(currentXP);
+    if (m.startingRank === undefined) {
+        m.startingRank = currentRank;
+    }
+    let taken = m.advancesCount || 0;
+    let pending = currentRank - m.startingRank - taken;
+    return Math.max(0, pending);
+}
+
+function applyStatUpgrade(m, statKey) {
+    if (!m.stats) m.stats = {};
+    let cur = m.stats[statKey];
+
+    if (cur === undefined || cur === null || cur === '-' || cur === '') {
+        if (['WS', 'BS', 'I', 'Sv', 'Ld', 'Cl', 'Wil', 'Int'].includes(statKey)) {
+            m.stats[statKey] = '6+';
+        } else if (statKey === 'M') {
+            m.stats[statKey] = '5"';
+        } else {
+            m.stats[statKey] = 1;
+        }
+        return;
+    }
+
+    let str = cur.toString().trim();
+    let hasQuote = str.endsWith('"');
+    let hasPlus = str.endsWith('+');
+    let num = parseInt(str);
+
+    if (isNaN(num)) {
+        m.stats[statKey] = str + ' (+1)';
+        return;
+    }
+
+    if (hasPlus) {
+        let newNum = Math.max(1, num - 1);
+        m.stats[statKey] = newNum + '+';
+    } else if (hasQuote) {
+        let newNum = num + 1;
+        m.stats[statKey] = newNum + '"';
+    } else {
+        m.stats[statKey] = num + 1;
+    }
+}
+
+// ==========================================
+// BANDEAU SUPÉRIEUR
+// ==========================================
+function updateTopBar() {
+    const topBar = document.getElementById('top-bar');
+    if (!topBar) return;
+
+    if (typeof currentGang === 'undefined' || !currentGang) {
+        topBar.innerHTML = '';
+        topBar.style.display = 'none';
+        return;
+    }
+
+    topBar.style.display = 'block';
+    topBar.classList.remove('hidden');
+
+    let fightersVal = (currentGang.members || []).reduce((sum, m) => sum + (m.totalCost || m.cost || 0), 0);
+    let stashVal = (currentGang.stash || []).reduce((sum, item) => {
+        let itemCost = (typeof item === 'object') ? (item.cost || item.cost_credits || item.price || 0) : 0;
+        return sum + itemCost;
+    }, 0);
+
+    let gangValue = fightersVal + stashVal;
+
+    topBar.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:6px 15px; background:var(--panel-bg, #1e1e1e); border-bottom:1px solid #333; box-sizing:border-box;">
+            <div>
+                <strong>${currentGang.name || 'Gang'}</strong> | 
+                Crédits : <strong style="color:var(--accent-cyan, #00d2d3);">${currentGang.credits || 0} cr</strong> | 
+                Valeur du gang : <strong style="color:var(--accent-purple, #9b59b6);">${gangValue} cr</strong>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openStashModal()">📦 Réserve (Stash)</button>
+                <button class="btn" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openTerritoriesModal()">🚩 Territoires</button>
+            </div>
+        </div>
+    `;
+}
+
+function setGameHeaderVisibility(inGame) {
+    const topBar = document.getElementById('top-bar');
+    if (topBar) {
+        if (inGame) {
+            topBar.classList.add('hidden');
+            topBar.style.display = 'none';
+        } else {
+            topBar.classList.remove('hidden');
+            topBar.style.display = 'block';
+            updateTopBar();
+        }
+    }
+}
+
+function safeSave() {
+    if (typeof saveGangs === 'function') saveGangs();
+    updateTopBar();
+}
+
+function safeNavigate(target) {
+    if (typeof navigate === 'function') navigate(target);
+    else if (typeof navigateTo === 'function') navigateTo(target);
+}
+
+function getFighterXP(m) {
+    if (m.xp !== undefined && m.xp !== null) return m.xp;
+    if (typeof db !== 'undefined' && db.characters) {
+        let charDef = db.characters.find(c => c.name === m.charName || (m.type && c.name === m.type[0]));
+        if (charDef) {
+            let startXp = charDef.starting_xp !== undefined ? charDef.starting_xp : (charDef.xp !== undefined ? charDef.xp : 0);
+            m.xp = startXp;
+            return startXp;
+        }
+    }
+    m.xp = 0;
+    return 0;
+}
+
+// ==========================================
+// MENU & MODALE DE LA RÉSERVE (STASH X/Y)
+// ==========================================
+function openStashModal() {
+    if (!currentGang) return;
+    if (!currentGang.stash) currentGang.stash = [];
+
+    let inventoryMap = {};
+
+    (currentGang.members || []).forEach(m => {
+        (m.weapons || []).forEach(w => {
+            let wName = w.name;
+            if (!inventoryMap[wName]) inventoryMap[wName] = { type: 'Arme', equipped: 0, stash: 0 };
+            inventoryMap[wName].equipped++;
+
+            if (w.accessory && w.accessory.name) {
+                let accName = w.accessory.name;
+                if (!inventoryMap[accName]) inventoryMap[accName] = { type: 'Accessoire', equipped: 0, stash: 0 };
+                inventoryMap[accName].equipped++;
+            }
+        });
+
+        if (m.armor && m.armor.name) {
+            let aName = m.armor.name;
+            if (!inventoryMap[aName]) inventoryMap[aName] = { type: 'Armure', equipped: 0, stash: 0 };
+            inventoryMap[aName].equipped++;
+        }
+
+        (m.equipment || []).forEach(e => {
+            let eName = e.name;
+            if (!inventoryMap[eName]) inventoryMap[eName] = { type: 'Équipement', equipped: 0, stash: 0 };
+            inventoryMap[eName].equipped++;
+        });
+    });
+
+    (currentGang.stash || []).forEach(item => {
+        let name = typeof item === 'string' ? item : item.name;
+        let type = (typeof item === 'object' && item.type) ? item.type : 'Matériel';
+        if (!inventoryMap[name]) inventoryMap[name] = { type: type, equipped: 0, stash: 0 };
+        inventoryMap[name].stash++;
+    });
+
+    let html = `
+        <div style="max-height:60vh; overflow-y:auto;">
+            <p><small>Format <strong>X/Y</strong> : <strong>X</strong> = Équipés sur guerriers / <strong>Y</strong> = Total possédés par le gang.</small></p>
+            <hr style="margin:10px 0; border-color:#333;">
+            <table style="width:100%; border-collapse:collapse; text-align:left;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--accent-purple, #9b59b6);">
+                        <th style="padding:6px;">Objet / Équipement</th>
+                        <th style="padding:6px;">Type</th>
+                        <th style="padding:6px; text-align:center;">Équipés / Total (X/Y)</th>
+                        <th style="padding:6px; text-align:center;">En Stock</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    let itemKeys = Object.keys(inventoryMap).sort();
+    if (itemKeys.length === 0) {
+        html += `<tr><td colspan="4" style="padding:15px; text-align:center; color:#888;">Le gang ne possède aucun matériel.</td></tr>`;
+    } else {
+        itemKeys.forEach(itemName => {
+            let data = inventoryMap[itemName];
+            let X = data.equipped;
+            let stashCount = data.stash;
+            let Y = X + stashCount;
+
+            html += `
+                <tr style="border-bottom:1px solid #222;">
+                    <td style="padding:6px;"><strong>${itemName}</strong></td>
+                    <td style="padding:6px;"><small style="color:#aaa;">${data.type}</small></td>
+                    <td style="padding:6px; text-align:center;"><strong style="color:var(--accent-cyan, #00d2d3);">${X}/${Y}</strong></td>
+                    <td style="padding:6px; text-align:center;">
+                        ${stashCount > 0 ? `<span style="color:#2ecc71;">${stashCount} dispo</span>` : `<span style="color:#888;">0 dispo</span>`}
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Fermer</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("📦 Réserve du Gang (Stash)", html);
+}
+
+// ==========================================
+// MENU DE GESTION DES TERRITOIRES
+// ==========================================
+function openTerritoriesModal() {
+    if (!currentGang) return;
+    if (!currentGang.territories) currentGang.territories = [];
+
+    let dbTerritories = (typeof db !== 'undefined' && db.territories) ? db.territories : [];
+
+    let html = `
+        <div style="max-height:60vh; overflow-y:auto;">
+            <h4>Territoires Contrôlés (${currentGang.territories.length})</h4>
+            <hr style="margin:8px 0; border-color:#333;">
+    `;
+
+    if (currentGang.territories.length === 0) {
+        html += `<p style="color:#888;">Aucun territoire contrôlé.</p>`;
+    } else {
+        html += `<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;">`;
+        currentGang.territories.forEach((tName, idx) => {
+            let tData = dbTerritories.find(x => x.name === tName);
+            let descText = tData ? tData.desc : 'Revenu : +15 cr';
+            html += `
+                <div style="background:#111; border:1px solid var(--accent-purple); padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="color:var(--accent-cyan);">${tName}</strong><br>
+                        <small style="color:#bbb;">${descText}</small>
+                    </div>
+                    <button class="btn btn-danger" style="padding:2px 8px; font-size:11px;" onclick="removeGangTerritoryFromModal(${idx})">Perdre</button>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+
+    html += `
+            <h4>Acquérir un nouveau Territoire</h4>
+            <hr style="margin:8px 0; border-color:#333;">
+            <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:12px;">
+    `;
+
+    dbTerritories.forEach(t => {
+        let count = currentGang.territories.filter(x => x === t.name).length;
+        let cleanName = t.name.replace(/'/g, "\\'");
+        html += `
+            <div style="border:1px solid #444; padding:8px; border-radius:5px; background:#1a1a1a;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <strong style="color:#fff;">${t.name}</strong>
+                        ${count > 0 ? `<span style="color:#2ecc71; font-size:11px; margin-left:8px;">(Possédé x${count})</span>` : ''}
+                    </div>
+                    <button class="btn btn-cyan" style="padding:2px 8px; font-size:11px;" onclick="addTerritoryToGang('${cleanName}')">+ Prendre</button>
+                </div>
+                <small style="color:#aaa;">${t.desc}</small>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <button class="btn" onclick="openAddCustomTerritoryPrompt()">+ Territoire Personnalisé</button>
+        </div>
+        <br>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Fermer</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("🚩 Gestion des Territoires", html);
+}
+
+function addTerritoryToGang(name) {
+    if (!currentGang) return;
+    if (!currentGang.territories) currentGang.territories = [];
+    currentGang.territories.push(name);
+    safeSave();
+    openTerritoriesModal();
+}
+
+function removeGangTerritoryFromModal(index) {
+    if (!currentGang || !currentGang.territories) return;
+    currentGang.territories.splice(index, 1);
+    safeSave();
+    openTerritoriesModal();
+}
+
+function openAddCustomTerritoryPrompt() {
+    let name = prompt("Nom du territoire personnalisé :");
+    if (name) {
+        addTerritoryToGang(name);
+    }
+}
+
+// ==========================================
+// GAME SETUP (Sélection des participants)
+// ==========================================
+function renderGameSetup(container) {
+    setGameHeaderVisibility(false);
+    
+    if (!currentGang) {
+        container.innerHTML = `<div class="card"><p>Aucun gang sélectionné.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
+        return;
+    }
+
+    let html = `
+        <div class="card">
+            <h2>Préparation de la Partie</h2>
+            <p>Sélectionnez les combattants qui participent à l'affrontement :</p><br>
+    `;
+
+    if (!currentGang.members || currentGang.members.length === 0) {
+        html += `<p>Aucun membre dans le gang.</p>`;
+    } else {
+        currentGang.members.forEach((m, idx) => {
+            if (!m.recovery) {
+                html += `
+                    <div class="fighter-item">
+                        <div>
+                            <strong>${m.customName}</strong> (${m.charName})<br>
+                            <small>${(m.type || []).join(', ')} - Coût : ${m.totalCost || 0}c | XP : ${getFighterXP(m)}</small>
+                        </div>
+                        <div>
+                            <button onclick="inspectFighter(${idx})">👁️ Voir</button>
+                            <label style="margin-left:10px;">
+                                <input type="checkbox" class="roster-select" value="${idx}" checked> Participe
+                            </label>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+    }
+
+    html += `
+        <br>
+        <button onclick="startGame()">⚔️ Lancer la Partie</button>
+        <button class="btn-danger" onclick="safeNavigate('gang-manage')">Annuler</button>
+    </div>`;
+
+    container.innerHTML = html;
+}
+
+function inspectFighter(idx) {
+    if (!currentGang || !currentGang.members[idx]) return;
+    const m = currentGang.members[idx];
+    let html = `
+        <p><strong>Type :</strong> ${(m.type || []).join(', ')}</p>
+        <p><strong>XP :</strong> ${getFighterXP(m)}</p>
+        <hr style="margin:10px 0; border-color:var(--border-color);">
+        <h4>Armes :</h4>
+        <ul>${(m.weapons || []).map(w => `<li>${w.name} ${w.accessory ? '('+w.accessory.name+')' : ''}</li>`).join('')}</ul>
+        <h4 style="margin-top:5px;">Équipements & Armures :</h4>
+        <ul>${(m.equipment || []).map(e => `<li>${e.name}</li>`).join('')}</ul>
+        <h4 style="margin-top:5px;">Compétences :</h4>
+        <ul>${(m.skills || []).map(s => `<li>${typeof s === 'string' ? s : (s.name || s)}</li>`).join('')}</ul>
+    `;
+    if (typeof openModal === 'function') openModal(m.customName, html);
+}
+
+function startGame() {
+    const selectedIndexes = document.querySelectorAll('.roster-select:checked');
+    if (selectedIndexes.length === 0) return alert("Sélectionnez au moins un combattant.");
+
+    if (!confirm("Confirmer le lancement de la partie avec ces combattants ?")) return;
+
+    currentGameRoster = [];
+    selectedIndexes.forEach(chk => {
+        let m = JSON.parse(JSON.stringify(currentGang.members[chk.value]));
+        m.currentHP = parseInt(m.stats ? m.stats.W : 1) || 1;
+        m.status = 'Prêt';
+        m.activated = false;
+        m.conditions = {};
+        
+        if (m.weapons) {
+            m.weapons.forEach(w => {
+                w.outOfAmmo = false;
+                w.jammed = false;
+            });
+        }
+        
+        currentGameRoster.push(m);
+    });
+
+    gameTactics = JSON.parse(JSON.stringify((typeof db !== 'undefined' && db.characters && db.characters[0] && db.characters[0].tactics_cards) ? (currentGang.tactics || []) : []));
+    
+    if (typeof appState !== 'undefined') appState.view = 'game-view';
+    renderGameView(document.getElementById('main-content'));
+}
+
+// ==========================================
+// GAME VIEW (Page Résumé & Actions)
+// ==========================================
+function renderGameView(container) {
+    setGameHeaderVisibility(true);
+
+    let html = `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Partie en cours — ${currentGang ? currentGang.name : ''}</h2>
+                <button onclick="openTacticsModal()">🎴 Cartes Tactiques</button>
+            </div>
+        </div>
+
+        <h3>Résumé de la Bande</h3>
+    `;
+
+    currentGameRoster.forEach((m, idx) => {
+        let statusStyle = '';
+        if (m.status === 'Suppressed') statusStyle = 'color: var(--status-suppressed);';
+        if (m.status === 'Out of action') statusStyle = 'color: var(--status-danger); opacity: 0.6;';
+
+        html += `
+            <div class="card" style="margin-bottom:10px; ${statusStyle}">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                    <div>
+                        <strong style="font-size:16px; cursor:pointer; text-decoration:underline;" onclick="openFighterDetailModal(${idx})">
+                            ${m.customName}
+                        </strong> 
+                        <small>(${(m.type || []).join(', ')})</small><br>
+                        <small>Armes : ${(m.weapons || []).map(w => w.name + (w.accessory ? ' ['+w.accessory.name+']' : '')).join(', ') || 'Aucune'}</small>
+                    </div>
+
+                    <div style="display:flex; align-items:center; gap:15px; margin-top:5px;">
+                        <div>
+                            PV : <strong>${m.currentHP}</strong> / ${m.stats ? m.stats.W : 1}
+                        </div>
+                        <div>
+                            Statut : <strong>${m.status}</strong>
+                        </div>
+                        <div>
+                            <label>
+                                <input type="checkbox" ${m.activated ? 'checked' : ''} onchange="toggleActivation(${idx})"> Activé
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+        <div style="position:fixed; bottom:0; left:0; width:100%; background:var(--panel-bg); padding:10px; display:flex; justify-content:center; gap:15px; border-top:2px solid var(--accent-purple); z-index:1000;">
+            <button onclick="endRound()">🔄 Fin de Round (Reset Activations)</button>
+            <button class="btn-danger" onclick="endGame()">🏁 Terminer la Partie</button>
+        </div>
+        <div style="height:60px;"></div>
+    `;
+
+    container.innerHTML = html;
+}
+
+function toggleActivation(idx) {
+    if (currentGameRoster[idx]) {
+        currentGameRoster[idx].activated = !currentGameRoster[idx].activated;
+        renderGameView(document.getElementById('main-content'));
+    }
+}
+
+function endRound() {
+    if (!confirm("Réinitialiser l'état 'Activé' de tous les guerriers pour le nouveau round ?")) return;
+    currentGameRoster.forEach(m => m.activated = false);
+    renderGameView(document.getElementById('main-content'));
+}
+
+function endGame() {
+    if (!confirm("Voulez-vous vraiment terminer la partie ?")) return;
+    setGameHeaderVisibility(false);
+
+    if (currentGang && currentGang.members) {
+        currentGameRoster.forEach(battleFighter => {
+            let gangFighter = currentGang.members.find(m => m.id === battleFighter.id || m.customName === battleFighter.customName);
+            if (gangFighter) {
+                if (battleFighter.status === 'Out of action' || battleFighter.currentHP <= 0) {
+                    gangFighter.ooa = true;
+                }
+            }
+        });
+        safeSave();
+    }
+
+    renderPostBattleView(document.getElementById('main-content'));
+}
+
+// ==========================================
+// FICHE DÉTAILLÉE DU COMBATTANT
+// ==========================================
+function openFighterDetailModal(idx) {
+    const m = currentGameRoster[idx];
+    if (!m) return;
+
+    let skillsDetailsHTML = '';
+    if (m.skills && m.skills.length > 0) {
+        skillsDetailsHTML = m.skills.map(s => {
+            let name = typeof s === 'string' ? s : (s.name || s);
+            let desc = typeof s === 'object' && s.desc ? s.desc : 'Pas de description.';
+            return `<div class="description-block"><strong>Compétence — ${name} :</strong> ${desc}</div>`;
+        }).join('');
+    }
+
+    let traitDescriptionsHTML = '';
+    let processedTraits = new Set();
+    
+    if (m.weapons) {
+        m.weapons.forEach(w => {
+            if (w.accessory && w.accessory.effect) {
+                traitDescriptionsHTML += `<div class="description-block"><strong>Accessoire d'arme — ${w.accessory.name} (${w.name}) :</strong> ${w.accessory.effect}</div>`;
+            }
+            
+            if (w.profiles && w.profiles[0] && w.profiles[0].traits) {
+                let traitsList = w.profiles[0].traits.split(',');
+                
+                traitsList.forEach(t => {
+                    let rawTrait = t.trim();
+                    if (!rawTrait) return;
+                    
+                    let baseKey = rawTrait.toLowerCase().replace(/\s*\(.*?\)/g, '').trim();
+                    
+                    if (!processedTraits.has(baseKey)) {
+                        processedTraits.add(baseKey);
+                        
+                        let foundTrait = null;
+                        if (typeof db !== 'undefined' && db.weapon_traits) {
+                            foundTrait = db.weapon_traits.find(dt => 
+                                dt.name.toLowerCase().replace(/\s*\(.*?\)/g, '').trim() === baseKey
+                            );
+                        }
+
+                        if (foundTrait) {
+                            traitDescriptionsHTML += `<div class="description-block"><strong>Trait d'arme — ${foundTrait.name} :</strong> ${foundTrait.desc}</div>`;
+                        } else {
+                            traitDescriptionsHTML += `<div class="description-block"><strong>Trait d'arme — ${rawTrait} :</strong> Description non répertoriée dans le registre.</div>`;
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    let equipmentDetailsHTML = '';
+    if (m.equipment && m.equipment.length > 0) {
+        equipmentDetailsHTML = m.equipment.map(e => {
+            return `<div class="description-block"><strong>Équipement / Armure — ${e.name} :</strong> ${e.effect || e.type || 'Équipement standard.'}</div>`;
+        }).join('');
+    }
+
+    let st = m.stats || {};
+    let html = `
+        <div class="landscape-card">
+            <div class="card-section-top">
+                <div>
+                    <h3>${m.customName}</h3>
+                    <small>${m.charName} — ${(m.type || []).join(', ')}</small>
+                </div>
+                <div>
+                    <span>PV : </span>
+                    <button onclick="adjHP(${idx}, -1)">-</button>
+                    <strong style="font-size:16px; margin:0 5px;">${m.currentHP}</strong>
+                    <button onclick="adjHP(${idx}, 1)">+</button>
+                </div>
+                <div>
+                    <label>Statut :</label>
+                    <select onchange="updateFighterStatus(${idx}, this.value)">
+                        <option value="Prêt" ${m.status === 'Prêt' ? 'selected' : ''}>Prêt</option>
+                        <option value="Engagé" ${m.status === 'Engagé' ? 'selected' : ''}>Engagé</option>
+                        <option value="Sérieusement blessé" ${m.status === 'Sérieusement blessé' ? 'selected' : ''}>Sérieusement blessé</option>
+                        <option value="Suppressed" ${m.status === 'Suppressed' ? 'selected' : ''}>Suppressed</option>
+                        <option value="Out of action" ${m.status === 'Out of action' ? 'selected' : ''}>Out of action</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card-section-center">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>M</th><th>WS</th><th>BS</th><th>S</th><th>T</th>
+                            <th>W</th><th>I</th><th>A</th><th>Sv</th><th>Ld</th>
+                            <th>Cl</th><th>Wil</th><th>Int</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>${st.M||'-'}</td><td>${st.WS||'-'}</td><td>${st.BS||'-'}</td>
+                            <td>${st.S||'-'}</td><td>${st.T||'-'}</td><td>${st.W||'-'}</td>
+                            <td>${st.I||'-'}</td><td>${st.A||'-'}</td><td>${st.Sv||'-'}</td>
+                            <td>${st.Ld||'-'}</td><td>${st.Cl||'-'}</td><td>${st.Wil||'-'}</td>
+                            <td>${st.Int||'-'}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h4 style="margin-top:5px;">Armes Équipées</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%;">Nom</th>
+                            <th style="width: 8%;">SR</th>
+                            <th style="width: 8%;">LR</th>
+                            <th style="width: 8%;">S</th>
+                            <th style="width: 8%;">AP</th>
+                            <th style="width: 8%;">L</th>
+                            <th style="width: 20%;">Traits</th>
+                            <th style="width: 15%;">Munitions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${(m.weapons || []).map((w, wIdx) => {
+                            const prof = (w.profiles && w.profiles[0]) ? w.profiles[0] : { SR:'-', LR:'-', S:'-', AP:'-', L:'-', traits:'' };
+                            const isMelee = (prof.traits || '').toLowerCase().includes('melee');
+                            const accText = w.accessory ? ` <br><small style="color:var(--accent-cyan)">[${w.accessory.name}]</small>` : '';
+                            return `
+                                <tr>
+                                    <td><strong>${w.name}</strong>${accText}</td>
+                                    <td>${prof.SR}</td>
+                                    <td>${prof.LR}</td>
+                                    <td>${prof.S}</td>
+                                    <td>${prof.AP}</td>
+                                    <td>${prof.L}</td>
+                                    <td><small>${prof.traits}</small></td>
+                                    <td>
+                                        ${isMelee ? '-' : `
+                                            <button class="btn-ammo ${w.outOfAmmo ? 'out' : ''}" onclick="toggleWeaponAmmo(${idx}, ${wIdx})">
+                                                ${w.outOfAmmo ? 'À COURT' : 'OK'}
+                                            </button>
+                                            <button class="btn-jam ${w.jammed ? 'jammed' : ''}" onclick="toggleWeaponJam(${idx}, ${wIdx})">
+                                                ${w.jammed ? 'ENRAYÉ' : 'Jam'}
+                                            </button>
+                                        `}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card-section-bottom">
+                <h4>Descriptions Détaillées</h4>
+                ${skillsDetailsHTML}
+                ${equipmentDetailsHTML}
+                ${traitDescriptionsHTML}
+                ${(!skillsDetailsHTML && !equipmentDetailsHTML && !traitDescriptionsHTML) ? '<p style="font-size:12px; color:#888;">Aucun effet ou compétence particulier.</p>' : ''}
+
+                <h4 style="margin-top:10px;">Conditions Cumulables</h4>
+                <div class="conditions-grid">
+                    ${CUMULATIVE_CONDITIONS.map(cond => `
+                        <div class="condition-item">
+                            <input type="checkbox" id="cond-${cond}" ${m.conditions && m.conditions[cond] ? 'checked' : ''} onchange="toggleCondition(${idx}, '${cond}')">
+                            <label for="cond-${cond}">${cond}</label>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+
+    if (typeof openModal === 'function') openModal(`Fiche : ${m.customName}`, html);
+}
+
+function adjHP(idx, amount) {
+    let m = currentGameRoster[idx];
+    if (m) {
+        m.currentHP = Math.max(0, m.currentHP + amount);
+        openFighterDetailModal(idx);
+        renderGameView(document.getElementById('main-content'));
+    }
+}
+
+function updateFighterStatus(idx, val) {
+    if (currentGameRoster[idx]) {
+        currentGameRoster[idx].status = val;
+        renderGameView(document.getElementById('main-content'));
+    }
+}
+
+function toggleWeaponAmmo(fIdx, wIdx) {
+    if (currentGameRoster[fIdx] && currentGameRoster[fIdx].weapons[wIdx]) {
+        let w = currentGameRoster[fIdx].weapons[wIdx];
+        w.outOfAmmo = !w.outOfAmmo;
+        openFighterDetailModal(fIdx);
+    }
+}
+
+function toggleWeaponJam(fIdx, wIdx) {
+    if (currentGameRoster[fIdx] && currentGameRoster[fIdx].weapons[wIdx]) {
+        let w = currentGameRoster[fIdx].weapons[wIdx];
+        w.jammed = !w.jammed;
+        openFighterDetailModal(fIdx);
+    }
+}
+
+function toggleCondition(fIdx, cond) {
+    if (currentGameRoster[fIdx]) {
+        let m = currentGameRoster[fIdx];
+        if (!m.conditions) m.conditions = {};
+        m.conditions[cond] = !m.conditions[cond];
+    }
+}
+
+function openTacticsModal() {
+    let html = `<div style="max-height:60vh; overflow-y:auto;">`;
+
+    if (!gameTactics || gameTactics.length === 0) {
+        html += `<p style="color:#888;">Aucune carte tactique attribuée à ce gang.</p>`;
+    } else {
+        gameTactics.forEach((t, i) => {
+            let isUsed = t.used;
+            let timing = t.timing || '';
+            let effect = t.effect || t.desc || t.effet || '';
+
+            html += `
+                <div style="border:1px solid ${isUsed ? '#333' : 'var(--accent-cyan)'}; padding:10px; margin-bottom:10px; border-radius:6px; background:${isUsed ? '#141414' : '#1e1e1e'}; opacity:${isUsed ? 0.45 : 1};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                        <strong style="color:${isUsed ? '#777' : 'var(--accent-cyan)'}; font-size:15px; ${isUsed ? 'text-decoration:line-through;' : ''}">${t.name}</strong>
+                        <span style="font-size:10px; padding:2px 6px; border-radius:3px; background:${isUsed ? '#333' : 'var(--accent-purple)'}; color:#fff; font-weight:bold;">
+                            ${isUsed ? 'UTILISÉE' : 'DISPONIBLE'}
+                        </span>
+                    </div>
+                    ${timing ? `<p style="font-size:12px; color:${isUsed ? '#666' : 'var(--accent-purple)'}; margin-bottom:4px;"><strong>Timing :</strong> ${timing}</p>` : ''}
+                    <p style="font-size:12px; color:${isUsed ? '#666' : '#ddd'}; margin-bottom:10px;"><strong>Effet :</strong> ${effect}</p>
+                    <button class="${isUsed ? '' : 'btn-danger'}" style="padding:4px 10px; font-size:11px;" onclick="toggleTacticUsed(${i})">
+                        ${isUsed ? '🔄 Réactiver' : '✖️ Marquer comme Utilisée'}
+                    </button>
+                </div>
+            `;
+        });
+    }
+
+    html += `</div><br><button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Fermer</button>`;
+    if (typeof openModal === 'function') openModal("🎴 Cartes Tactiques du Gang", html);
+}
+
+function toggleTacticUsed(idx) {
+    if (gameTactics[idx]) {
+        gameTactics[idx].used = !gameTactics[idx].used;
+        openTacticsModal();
+    }
+}
+
+// ==========================================
+// 1. SÉQUENCE POST-BATAILLE
+// ==========================================
+function renderPostBattleView(container) {
+    if (!container) container = document.getElementById('main-content');
+    if (!container) return;
+
+    if (!currentGang) {
+        container.innerHTML = `<div class="card"><p>Aucun gang chargé.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
+        return;
+    }
+
+    updateTopBar();
+
+    let ooaFighters = (currentGang.members || []).filter(m => m.ooa === true);
+
+    let html = `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <h2>Séquence Post-Bataille — ${currentGang.name}</h2>
+                <button class="btn btn-cyan" onclick="openStashModal()">📦 Réserve du Gang (Stash)</button>
+            </div>
+            <div style="margin-top:10px;">
+                <button class="btn" onclick="safeNavigate('gang-manage')">← Retour Gestion du Gang</button>
+                <button class="btn btn-cyan" onclick="renderPostCycleView(document.getElementById('main-content'))">Passer au Post-Cycle →</button>
+            </div>
+            <hr style="margin: 15px 0; border-color: #333;">
+
+            <h3>1. Résolution des Blessures Permanentes (Out of Action)</h3>
+    `;
+
+    if (ooaFighters.length === 0) {
+        html += `<p style="color:var(--state-ready, #2ecc71);">Aucun guerrier n'a fini Out of Action !</p>`;
+    } else {
+        ooaFighters.forEach(m => {
+            html += `
+                <div style="border: 1px solid #e74c3c; padding: 12px; margin-bottom: 10px; border-radius: 6px; background: #1a0a0f;">
+                    <strong style="color: #e74c3c;">${m.customName}</strong> (${m.charName})<br>
+                    <label>Attribuer une blessure : </label>
+                    <select id="inj-select-${m.id}">
+                        ${PERMANENT_INJURIES.map(inj => `<option value="${inj}">${inj}</option>`).join('')}
+                    </select>
+                    <button class="btn btn-danger" onclick="applyInjury('${m.id}')">Valider Blessure</button>
+                </div>
+            `;
+        });
+    }
+
+    html += `
+            <hr style="margin: 15px 0; border-color: #333;">
+            <h3>2. Attribution de l'Expérience (XP)</h3>
+            <div class="roster-list">
+    `;
+
+    (currentGang.members || []).forEach(m => {
+        let pendingAdvances = getPendingAdvances(m);
+        let btnLevelUp = pendingAdvances > 0 
+            ? `<button class="btn btn-cyan" onclick="openLevelUpModal('${m.id}')">⭐ Montée de Niveau (${pendingAdvances})</button>`
+            : `<button class="btn" disabled style="opacity:0.4; cursor:not-allowed;">⭐ Montée de Niveau (0)</button>`;
+
+        html += `
+            <div class="fighter-item" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                <div>
+                    <strong>${m.customName}</strong> | XP : <strong>${getFighterXP(m)}</strong> (Rang ${getFighterRank(getFighterXP(m))})
+                </div>
+                <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
+                    <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Partic.)</button>
+                    <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Assistance)</button>
+                    <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Injure)</button>
+                    <button class="btn" onclick="addFighterXP('${m.id}', 2)">+2 XP (OOA)</button>
+                    <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Obj.)</button>
+                    ${btnLevelUp}
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <hr style="margin: 15px 0; border-color: #333;">
+            <h3>3. Territoires & Réputation</h3>
+            <p>Réputation : <strong>${currentGang.reputation || 0}</strong> 
+                <button class="btn" onclick="adjustReputation(1)">+1</button> 
+                <button class="btn" onclick="adjustReputation(-1)">-1</button>
+            </p>
+            <button class="btn btn-cyan" onclick="openTerritoriesModal()">🚩 Gérer les Territoires (${(currentGang.territories || []).length})</button>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+function applyInjury(fighterId) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+
+    let selectElem = document.getElementById(`inj-select-${fighterId}`);
+    let selectedInj = selectElem ? selectElem.value : "Aucune conséquence";
+    m.ooa = false;
+
+    if (!m.injuries) m.injuries = [];
+    if (!currentGang.stash) currentGang.stash = [];
+
+    if (selectedInj === "+1 XP") {
+        m.xp = getFighterXP(m) + 1;
+        alert(`${m.customName} gagne +1 XP !`);
+    } else if (selectedInj === "+2 XP") {
+        m.xp = getFighterXP(m) + 2;
+        alert(`${m.customName} gagne +2 XP !`);
+    } else if (selectedInj === "+3 XP") {
+        m.xp = getFighterXP(m) + 3;
+        alert(`${m.customName} gagne +3 XP !`);
+    } else if (selectedInj === "Mort") {
+        if (confirm(`${m.customName} est morte ! Son équipement va être transféré dans la réserve du gang.`)) {
+            if (m.weapons) {
+                m.weapons.forEach(w => {
+                    currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost || 0 });
+                });
+            }
+            if (m.armor) currentGang.stash.push({ name: m.armor.name, type: "Armure", cost: m.armor.cost || 0 });
+            if (m.equipment) {
+                m.equipment.forEach(e => {
+                    currentGang.stash.push({ name: e.name, type: "Équipement", cost: e.cost || 0 });
+                });
+            }
+            currentGang.members = currentGang.members.filter(x => x.id !== fighterId);
+        }
+    } else if (selectedInj.includes("Recovery")) {
+        m.recovery = true;
+        m.injuries.push(selectedInj);
+    } else if (selectedInj === "Blessure critique") {
+        m.critInj = true;
+        m.injuries.push(selectedInj);
+    } else {
+        m.injuries.push(selectedInj);
+    }
+
+    safeSave();
+    renderPostBattleView(document.getElementById('main-content'));
+}
+
+function addFighterXP(fighterId, amount) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (m) {
+        m.xp = getFighterXP(m) + amount;
+        safeSave();
+        renderPostBattleView(document.getElementById('main-content'));
+    }
+}
+
+function adjustReputation(delta) {
+    if (!currentGang) return;
+    currentGang.reputation = (currentGang.reputation || 0) + delta;
+    safeSave();
+    renderPostBattleView(document.getElementById('main-content'));
+}
+
+// ==========================================
+// 2. SÉQUENCE POST-CYCLE
+// ==========================================
+function renderPostCycleView(container) {
+    if (!container) container = document.getElementById('main-content');
+    if (!container) return;
+
+    if (!currentGang) {
+        container.innerHTML = `<div class="card"><p>Aucun gang chargé.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
+        return;
+    }
+
+    updateTopBar();
+
+    let html = `
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                <h2>Séquence Post-Cycle — ${currentGang.name}</h2>
+                <button class="btn btn-cyan" onclick="openStashModal()">📦 Réserve du Gang (Stash)</button>
+            </div>
+            <div style="margin-top:10px;">
+                <button class="btn" onclick="safeNavigate('gang-manage')">← Retour Gestion du Gang</button>
+            </div>
+            <hr style="margin: 15px 0; border-color: #333;">
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div style="background:var(--bg-dark, #111); padding:12px; border-radius:6px;">
+                    <h3>Actions Spéciales</h3>
+                    <button class="btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="actionMedicalEscort()">
+                        🏥 <strong>Escorte Médicale</strong> (30 cr)<br>
+                        <small>Un Leader/Champion accompagne un blessé critique</small>
+                    </button>
+                    <button class="btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="actionBionics()">
+                        🦾 <strong>Pose de Bioniques</strong> (50 cr)<br>
+                        <small>Soigner une blessure spécifique sur un guerrier</small>
+                    </button>
+                    <button class="btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="actionTerritoryWork()">
+                        ⛏️ <strong>Travail sur les Territoires</strong> (+5 cr / guerrier)<br>
+                        <small>Leader, Champion, Ganger ou Prospect (Max 5)</small>
+                    </button>
+                    <button class="btn" style="width:100%; text-align:left; margin-bottom:8px;" onclick="actionTraining()">
+                        🏋️ <strong>Entraînement</strong> (+2 XP / guerrier)<br>
+                        <small>Tous les guerriers disponibles</small>
+                    </button>
+                    <button class="btn" style="width:100%; text-align:left;" onclick="actionCollectTerritories()">
+                        💰 <strong>Collecte des Territoires</strong><br>
+                        <small>Récolter les revenus automatiques des territoires</small>
+                    </button>
+                </div>
+
+                <div style="background:var(--bg-dark, #111); padding:12px; border-radius:6px;">
+                    <h3>Trading Post</h3>
+                    <p>Sélectionnez vos envoyés pour générer vos TP et accéder au marché.</p>
+                    <p>Crédits du gang : <strong style="color:var(--accent-cyan, #00d2d3);">${currentGang.credits || 0} cr</strong></p>
+                    <button class="btn btn-cyan" style="width:100%;" onclick="openTradingPostSetupModal()">Visiter le Trading Post</button>
+                </div>
+            </div>
+
+            <hr style="margin: 15px 0; border-color: #333;">
+            <h3>Dépense d'XP & Avancées des Guerriers</h3>
+            <div class="roster-list">
+    `;
+
+    (currentGang.members || []).forEach(m => {
+        let pendingAdvances = getPendingAdvances(m);
+        let btnLevelUp = pendingAdvances > 0 
+            ? `<button class="btn btn-cyan" onclick="openLevelUpModal('${m.id}')">⭐ Montée de Niveau (${pendingAdvances})</button>`
+            : `<button class="btn" disabled style="opacity:0.4; cursor:not-allowed;">⭐ Montée de Niveau (0)</button>`;
+
+        html += `
+            <div class="fighter-item" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <div>
+                    <strong>${m.customName}</strong> (${m.charName})<br>
+                    <small>XP : <strong>${getFighterXP(m)}</strong> | Rang : ${getFighterRank(getFighterXP(m))} | Coût : ${m.totalCost || m.cost || 0} cr</small>
+                </div>
+                <div style="display:flex; gap:6px;">
+                    ${btnLevelUp}
+                    <button class="btn btn-cyan" onclick="openSkillSelectModal('${m.id}')">Compétences</button>
+                </div>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+// ==========================================
+// REGISTRE CENTRAL DES ACTIONS POST-CYCLE (1 ACTION / GUERRIER)
+// ==========================================
+let postCycleSession = {
+    assignments: {}
+};
+
+function isFighterBusy(fId) {
+    return postCycleSession.assignments[fId] || null;
+}
+
+// 1. ESCORTE MÉDICALE
+function actionMedicalEscort() {
+    if (!currentGang) return;
+    let crits = (currentGang.members || []).filter(m => m.critInj && !m.recovery);
+    if (crits.length === 0) return alert("Aucun guerrier n'a de blessure critique à soigner.");
+    if ((currentGang.credits || 0) < 30) return alert("Crédits insuffisants (30 cr requis).");
+
+    let target = crits.find(m => !isFighterBusy(m.id));
+    if (!target) return alert("Tous les guerriers en blessure critique ont déjà effectué une action ce cycle.");
+
+    let escort = currentGang.members.find(m => {
+        if (m.id === target.id || m.recovery || isFighterBusy(m.id)) return false;
+        let types = (m.type || []).map(t => t.toLowerCase());
+        return types.includes("leader") || types.includes("champion");
+    });
+
+    if (!escort) return alert("Aucun Leader ou Champion disponible (non occupé) pour accompagner le blessé.");
+
+    let choice = prompt(`Escorte médicale pour ${target.customName} par ${escort.customName} (Coût : 30 cr) :\n1 = Mort\n2 = Stabilisée (garder séquelle)\n3 = Guérie (part en Recovery)`);
+    
+    if (choice === '1') {
+        currentGang.members = currentGang.members.filter(x => x.id !== target.id);
+        delete postCycleSession.assignments[target.id];
+        alert(`${target.customName} est décédée.`);
+    } else if (choice === '2') {
+        target.critInj = false;
+        if (!target.injuries) target.injuries = [];
+        target.injuries.push("Séquelle stabilisée");
+        postCycleSession.assignments[target.id] = 'Escorte Médicale';
+        postCycleSession.assignments[escort.id] = 'Escorte Médicale';
+    } else if (choice === '3') {
+        target.critInj = false;
+        target.recovery = true;
+        postCycleSession.assignments[target.id] = 'Escorte Médicale';
+        postCycleSession.assignments[escort.id] = 'Escorte Médicale';
+    } else {
+        return;
+    }
+
+    currentGang.credits -= 30;
+    safeSave();
+    renderPostCycleView(document.getElementById('main-content'));
+}
+
+// 2. POSE DE BIONIQUES
+function actionBionics() {
+    if (!currentGang) return;
+    let injuredMembers = (currentGang.members || []).filter(m => (m.injuries && m.injuries.length > 0) || m.critInj || m.recovery);
+
+    if (injuredMembers.length === 0) return alert("Aucun combattant n'a de blessure permanente ou séquelle à soigner.");
+
+    let html = `
+        <p>Crédits du gang : <strong style="color:var(--accent-cyan, #00d2d3);">${currentGang.credits || 0} cr</strong> | Coût par pose : <strong>50 cr</strong></p>
+        <p><small style="color:#e74c3c;">⚠️ Règle : 1 seule action post-cycle par guerrier.</small></p>
+        <hr style="margin:10px 0; border-color:#333;">
+        <div style="max-height:50vh; overflow-y:auto;">
+    `;
+
+    injuredMembers.forEach(m => {
+        let busyReason = isFighterBusy(m.id);
+        let isBusyOther = busyReason && busyReason !== 'Pose Bionique';
+
+        html += `
+            <div style="border:1px solid #444; padding:8px; margin-bottom:8px; border-radius:4px; background:#111; ${isBusyOther ? 'opacity:0.4;' : ''}">
+                <strong>${m.customName}</strong> (${m.charName})
+                ${isBusyOther ? `<small style="color:#e74c3c; margin-left:10px;">Occupé : ${busyReason}</small>` : ''}
+                <div style="margin-top:6px; display:flex; flex-direction:column; gap:4px;">
+        `;
+
+        if (m.critInj) {
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#2a0808; padding:4px; border-radius:3px;">
+                    <small style="color:#e74c3c;">Blessure Critique</small>
+                    <button class="btn btn-cyan" ${isBusyOther ? 'disabled' : ''} style="padding:2px 6px; font-size:11px;" onclick="healSpecificInjury('${m.id}', 'critInj')">Soigner (-50 cr)</button>
+                </div>
+            `;
+        }
+
+        if (m.recovery) {
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#2a2008; padding:4px; border-radius:3px;">
+                    <small style="color:#f39c12;">En Convalescence (Recovery)</small>
+                    <button class="btn btn-cyan" ${isBusyOther ? 'disabled' : ''} style="padding:2px 6px; font-size:11px;" onclick="healSpecificInjury('${m.id}', 'recovery')">Soigner (-50 cr)</button>
+                </div>
+            `;
+        }
+
+        (m.injuries || []).forEach((injName, idx) => {
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; background:#222; padding:4px; border-radius:3px;">
+                    <small style="color:#aaa;">${injName}</small>
+                    <button class="btn btn-cyan" ${isBusyOther ? 'disabled' : ''} style="padding:2px 6px; font-size:11px;" onclick="healSpecificInjury('${m.id}', ${idx})">Soigner (-50 cr)</button>
+                </div>
+            `;
+        });
+
+        html += `</div></div>`;
+    });
+
+    html += `</div><br><button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Annuler</button>`;
+    if (typeof openModal === 'function') openModal("🦾 Pose de Bioniques", html);
+}
+
+function healSpecificInjury(fighterId, targetType) {
+    if (!currentGang) return;
+    if ((currentGang.credits || 0) < 50) return alert("Crédits insuffisants (50 cr requis).");
+
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+
+    currentGang.credits -= 50;
+    postCycleSession.assignments[m.id] = 'Pose Bionique';
+
+    if (targetType === 'critInj') m.critInj = false;
+    else if (targetType === 'recovery') m.recovery = false;
+    else if (typeof targetType === 'number' && m.injuries) m.injuries.splice(targetType, 1);
+
+    safeSave();
+    alert(`Traitement bionique appliqué avec succès sur ${m.customName} !`);
+    if (typeof closeModal === 'function') closeModal();
+    renderPostCycleView(document.getElementById('main-content'));
+}
+
+// 3. TRAVAIL SUR LES TERRITOIRES
+function actionTerritoryWork() {
+    if (!currentGang || !currentGang.members) return;
+
+    let eligible = currentGang.members.filter(m => {
+        if (m.recovery) return false;
+        let types = (m.type || []).map(t => t.toLowerCase());
+        return types.some(t => t.includes("leader") || t.includes("champion") || t.includes("ganger") || t.includes("prospect") || t.includes("juve"));
+    });
+
+    let html = `
+        <p><small>Sélectionnez jusqu'à <strong>5 combattants</strong> (+5 cr par guerrier).</small></p>
+        <p><small style="color:#e74c3c;">⚠️ Règle : 1 seule action post-cycle par guerrier.</small></p>
+        <hr style="margin:10px 0; border-color:#333;">
+        <div style="max-height:50vh; overflow-y:auto;">
+    `;
+
+    eligible.forEach(m => {
+        let busyReason = isFighterBusy(m.id);
+        let isWorking = busyReason === 'Travail Territoires';
+        let isBusyOther = busyReason && busyReason !== 'Travail Territoires';
+
+        html += `
+            <div style="background:#111; border:1px solid #333; padding:8px; border-radius:5px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; ${isBusyOther ? 'opacity:0.4;' : ''}">
+                <div>
+                    <strong style="color:var(--accent-cyan);">${m.customName || m.charName}</strong> 
+                    <small style="color:#aaa;">(${(m.type || []).join(', ')})</small>
+                    ${isBusyOther ? `<br><small style="color:#e74c3c;">Occupé : ${busyReason}</small>` : ''}
+                </div>
+                <input type="checkbox" class="work-fighter-cb" value="${m.id}" ${isWorking ? 'checked' : ''} ${isBusyOther ? 'disabled' : ''} onchange="limitTerritoryWorkCB(this)" style="transform:scale(1.2); cursor:pointer;">
+            </div>
+        `;
+    });
+
+    html += `
+        </div><br>
+        <button class="btn btn-cyan" onclick="confirmTerritoryWork()">Valider le travail</button>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Annuler</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("⛏️ Travail sur les Territoires", html);
+}
+
+function limitTerritoryWorkCB(changedCb) {
+    if (document.querySelectorAll('.work-fighter-cb:checked').length > 5) {
+        changedCb.checked = false;
+        alert("Maximum 5 guerriers peuvent travailler.");
+    }
+}
+
+function confirmTerritoryWork() {
+    let selectedIds = Array.from(document.querySelectorAll('.work-fighter-cb:checked')).map(cb => cb.value);
+    let newlyAssigned = 0, unassigned = 0;
+
+    (currentGang.members || []).forEach(m => {
+        let wasWorking = postCycleSession.assignments[m.id] === 'Travail Territoires';
+        let isSelected = selectedIds.includes(m.id);
+
+        if (isSelected && !wasWorking) {
+            postCycleSession.assignments[m.id] = 'Travail Territoires';
+            newlyAssigned++;
+        } else if (!isSelected && wasWorking) {
+            delete postCycleSession.assignments[m.id];
+            unassigned++;
+        }
+    });
+
+    let creditDiff = (newlyAssigned * 5) - (unassigned * 5);
+    currentGang.credits = Math.max(0, (currentGang.credits || 0) + creditDiff);
+
+    safeSave();
+    if (typeof closeModal === 'function') closeModal();
+    renderPostCycleView(document.getElementById('main-content'));
+}
+
+// 4. ENTRAÎNEMENT
+function actionTraining() {
+    if (!currentGang || !currentGang.members) return;
+
+    let eligible = currentGang.members.filter(m => !m.recovery);
+
+    let html = `
+        <p><small>Chaque combattant sélectionné gagne <strong>+2 XP</strong>.</small></p>
+        <p><small style="color:#e74c3c;">⚠️ Règle : 1 seule action post-cycle par guerrier.</small></p>
+        <hr style="margin:10px 0; border-color:#333;">
+        <div style="max-height:50vh; overflow-y:auto;">
+    `;
+
+    eligible.forEach(m => {
+        let busyReason = isFighterBusy(m.id);
+        let isTraining = busyReason === 'Entraînement';
+        let isBusyOther = busyReason && busyReason !== 'Entraînement';
+
+        html += `
+            <div style="background:#111; border:1px solid #333; padding:8px; border-radius:5px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; ${isBusyOther ? 'opacity:0.4;' : ''}">
+                <div>
+                    <strong style="color:var(--accent-cyan);">${m.customName || m.charName}</strong> 
+                    <small style="color:#aaa;">(XP actuelle : ${getFighterXP(m)})</small>
+                    ${isBusyOther ? `<br><small style="color:#e74c3c;">Occupé : ${busyReason}</small>` : ''}
+                </div>
+                <input type="checkbox" class="training-fighter-cb" value="${m.id}" ${isTraining ? 'checked' : ''} ${isBusyOther ? 'disabled' : ''} style="transform:scale(1.2); cursor:pointer;">
+            </div>
+        `;
+    });
+
+    html += `
+        </div><br>
+        <button class="btn btn-cyan" onclick="confirmTraining()">Valider l'entraînement</button>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Annuler</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("🏋️ Entraînement des Guerriers", html);
+}
+
+function confirmTraining() {
+    let selectedIds = Array.from(document.querySelectorAll('.training-fighter-cb:checked')).map(cb => cb.value);
+
+    (currentGang.members || []).forEach(m => {
+        let wasTraining = postCycleSession.assignments[m.id] === 'Entraînement';
+        let isSelected = selectedIds.includes(m.id);
+
+        if (isSelected && !wasTraining) {
+            postCycleSession.assignments[m.id] = 'Entraînement';
+            m.xp = getFighterXP(m) + 2;
+        } else if (!isSelected && wasTraining) {
+            delete postCycleSession.assignments[m.id];
+            m.xp = Math.max(0, getFighterXP(m) - 2);
+        }
+    });
+
+    safeSave();
+    if (typeof closeModal === 'function') closeModal();
+    renderPostCycleView(document.getElementById('main-content'));
+}
+
+// 5. COLLECTE DES TERRITOIRES
+function actionCollectTerritories() {
+    if (!currentGang || !currentGang.territories || currentGang.territories.length === 0) return alert("Le gang ne possède aucun territoire à exploiter.");
+
+    let dbTerritories = (typeof db !== 'undefined' && db.territories) ? db.territories : [];
+    let html = `
+        <p>Pour chaque territoire, choisissez si vous encaissez le revenu en crédits ou si vous activez l'effet alternatif :</p>
+        <hr style="margin:10px 0; border-color:#333;">
+        <div style="max-height:50vh; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+    `;
+
+    currentGang.territories.forEach((tName, idx) => {
+        let tData = dbTerritories.find(x => x.name === tName);
+        let income = tData ? tData.income : 15;
+
+        html += `
+            <div style="border:1px solid #444; padding:10px; border-radius:5px; background:#111;">
+                <strong style="color:var(--accent-cyan);">${tName}</strong><br>
+                <small style="color:#aaa;">${tData ? tData.desc : ''}</small><br><br>
+                <select id="collect-choice-${idx}" style="padding:6px; font-size:12px; margin:0;">
+                    <option value="credits">💰 Encaisser les ${income} crédits</option>
+                    ${tData && tData.optionText ? `<option value="option">🎁 ${tData.optionText}</option>` : ''}
+                </select>
+            </div>
+        `;
+    });
+
+    html += `
+        </div><br>
+        <button class="btn btn-cyan" onclick="confirmCollectTerritories()">Valider la Récolte</button>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Annuler</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("💰 Récolte des Territoires", html);
+}
+
+function confirmCollectTerritories() {
+    if (!currentGang || !currentGang.territories) return;
+    let dbTerritories = (typeof db !== 'undefined' && db.territories) ? db.territories : [];
+
+    let totalCreditsGained = 0;
+    let summaryLog = [];
+
+    if (!currentGang.stash) currentGang.stash = [];
+
+    currentGang.territories.forEach((tName, idx) => {
+        let selectElem = document.getElementById(`collect-choice-${idx}`);
+        let choice = selectElem ? selectElem.value : 'credits';
+        let tData = dbTerritories.find(x => x.name === tName);
+        let baseIncome = tData ? tData.income : 15;
+
+        if (choice === 'credits') {
+            totalCreditsGained += baseIncome;
+        } else if (choice === 'option' && tData) {
+            if (tData.optionType === 'items_suits') {
+                for(let i = 0; i < 3; i++) currentGang.stash.push({ name: "Combinaison de protection", type: "Armure", cost: 10 });
+                summaryLog.push(`• ${tName} : 3 Combinaisons de protection ajoutées à la réserve.`);
+            } else if (tData.optionType === 'items_respirators') {
+                for(let i = 0; i < 2; i++) currentGang.stash.push({ name: "Respirateur", type: "Personnel", cost: 15 });
+                summaryLog.push(`• ${tName} : 2 Respirateurs ajoutés à la réserve.`);
+            } else if (tData.optionType.startsWith('discount_')) {
+                summaryLog.push(`• ${tName} : Réduction appliquée pour le recrutement ce cycle.`);
+            }
+        }
+    });
+
+    currentGang.credits = (currentGang.credits || 0) + totalCreditsGained;
+    safeSave();
+
+    let message = `Récolte terminée !\n• Crédits gagnés : +${totalCreditsGained} cr\n`;
+    if (summaryLog.length > 0) message += summaryLog.join("\n");
+
+    alert(message);
+    if (typeof closeModal === 'function') closeModal();
+    renderPostCycleView(document.getElementById('main-content'));
+}
+
+// 6. TRADING POST
+let tradingPostSession = {
+    selectedFighterIds: [],
+    availableTP: 0,
+    tpLog: []
+};
+
+function openTradingPostSetupModal() {
+    if (!currentGang) return;
+    tradingPostSession.selectedFighterIds = [];
+    tradingPostSession.availableTP = 0;
+    tradingPostSession.tpLog = [];
+
+    let eligibleFighters = (currentGang.members || []).filter(m => {
+        let types = (m.type || []).map(t => t.toLowerCase());
+        let isLeaderOrChamp = types.includes("leader") || types.includes("champion");
+        let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connecté");
+        return isLeaderOrChamp || hasConnected;
+    });
+
+    let html = `
+        <div style="max-height:60vh; overflow-y:auto;">
+            <p><small>Sélectionnez les combattants qui se rendent au Trading Post :</small></p>
+            <p><small style="color:#e74c3c;">⚠️ Règle : 1 seule action post-cycle par guerrier.</small></p>
+            <hr style="margin:10px 0; border-color:#333;">
+    `;
+
+    if (eligibleFighters.length === 0) {
+        html += `<p style="color:#888;">Aucun Leader, Champion ou membre avec la compétence "Connecté" disponible.</p>`;
+    } else {
+        eligibleFighters.forEach(m => {
+            let types = (m.type || []).map(t => t.toLowerCase());
+            let isLeader = types.includes("leader");
+            let isChampion = types.includes("champion");
+            let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connecté");
+
+            let busyReason = isFighterBusy(m.id);
+            let isBusyOther = busyReason && busyReason !== 'Trading Post';
+            let isSelected = busyReason === 'Trading Post';
+
+            let infoParts = [];
+            if (isLeader) infoParts.push("Leader: 2 TP");
+            else if (isChampion) infoParts.push("Champion: 1 TP");
+            if (hasConnected) infoParts.push("Connecté: +1 TP");
+
+            html += `
+                <div style="background:#111; border:1px solid #333; padding:8px; border-radius:5px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; ${isBusyOther ? 'opacity:0.4;' : ''}">
+                    <div>
+                        <strong style="color:var(--accent-cyan);">${m.customName || m.charName}</strong> 
+                        <small style="color:#aaa;">(${infoParts.join(' | ')})</small>
+                        ${isBusyOther ? `<br><small style="color:#e74c3c;">Occupé : ${busyReason}</small>` : ''}
+                    </div>
+                    <input type="checkbox" id="tp-fighter-${m.id}" ${isSelected ? 'checked' : ''} ${isBusyOther ? 'disabled' : ''} onchange="toggleTradingPostFighter('${m.id}')" style="transform:scale(1.2); cursor:pointer;">
+                </div>
+            `;
+        });
+    }
+
+    let techBazaarCount = (currentGang.territories || []).filter(t => t.toLowerCase() === "tech bazaar").length;
+    if (techBazaarCount > 0) {
+        html += `<p style="color:var(--accent-purple); font-size:12px; margin-top:10px;">🚩 Territoires Tech Bazaar (${techBazaarCount}) : +${techBazaarCount} TP automatique(s).</p>`;
+    }
+
+    html += `
+        </div><br>
+        <button class="btn btn-cyan" onclick="confirmTradingPostFixedTP()">Calculer les TP et ouvrir le marché</button>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Annuler</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("🏬 Visite au Trading Post", html);
+}
+
+function toggleTradingPostFighter(fId) {
+    let idx = tradingPostSession.selectedFighterIds.indexOf(fId);
+    if (idx >= 0) {
+        tradingPostSession.selectedFighterIds.splice(idx, 1);
+    } else {
+        tradingPostSession.selectedFighterIds.push(fId);
+    }
+}
+
+function confirmTradingPostFixedTP() {
+    let totalTP = 0;
+    let log = [];
+
+    Object.keys(postCycleSession.assignments).forEach(fId => {
+        if (postCycleSession.assignments[fId] === 'Trading Post') {
+            delete postCycleSession.assignments[fId];
+        }
+    });
+
+    tradingPostSession.selectedFighterIds.forEach(fId => {
+        let m = currentGang.members.find(x => x.id === fId);
+        if (!m) return;
+
+        postCycleSession.assignments[m.id] = 'Trading Post';
+
+        let types = (m.type || []).map(t => t.toLowerCase());
+        let isLeader = types.includes("leader");
+        let isChampion = types.includes("champion");
+        let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connecté");
+
+        let fighterTP = 0;
+        let details = [];
+
+        if (isLeader) { fighterTP += 2; details.push("+2 TP Leader"); }
+        else if (isChampion) { fighterTP += 1; details.push("+1 TP Champion"); }
+
+        if (hasConnected) { fighterTP += 1; details.push("+1 TP Connecté"); }
+
+        totalTP += fighterTP;
+        log.push(`${m.customName || m.charName} : ${fighterTP} TP (${details.join(', ')})`);
+    });
+
+    let techBazaarCount = (currentGang.territories || []).filter(t => t.toLowerCase() === "tech bazaar").length;
+    if (techBazaarCount > 0) {
+        totalTP += techBazaarCount;
+        log.push(`Territoire(s) Tech Bazaar : +${techBazaarCount} TP`);
+    }
+
+    tradingPostSession.availableTP = totalTP;
+    tradingPostSession.tpLog = log;
+
+    if (typeof closeModal === 'function') closeModal();
+    renderTradingPostView();
+}
+
+function renderTradingPostView() {
+    let dbWeapons = (typeof db !== 'undefined' && db.weapons) ? db.weapons : [];
+    let dbEquip = (typeof db !== 'undefined' && db.equipment) ? db.equipment : [];
+
+    let html = `
+        <div style="background:#111; padding:10px; border-radius:5px; border:1px solid var(--accent-purple); margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                <strong>Crédits :</strong> <span style="color:#2ecc71; font-size:16px;">${currentGang.credits || 0} cr</span> | 
+                <strong>TP disponibles :</strong> <span style="color:var(--accent-cyan); font-size:16px;">${tradingPostSession.availableTP} TP</span>
+            </div>
+            <button class="btn btn-cyan" onclick="openTradingPostSetupModal()">🔄 Modifier les envoyés</button>
+        </div>
+    `;
+
+    if (tradingPostSession.tpLog.length > 0) {
+        html += `
+            <details style="margin-bottom:15px; background:#181818; padding:8px; border-radius:4px; font-size:12px;">
+                <summary style="cursor:pointer; color:#aaa;">Détails des TP générés</summary>
+                <ul style="margin-top:5px; padding-left:15px; color:#bbb;">
+                    ${tradingPostSession.tpLog.map(l => `<li>${l}</li>`).join('')}
+                </ul>
+            </details>
+        `;
+    }
+
+    html += `
+        <div style="max-height:50vh; overflow-y:auto; padding-right:5px;">
+            <h4>Armes du Marché</h4>
+            <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:20px;">
+    `;
+
+    dbWeapons.forEach(w => {
+        let tpCost = w.cost_tp !== undefined ? w.cost_tp : (w.rarity || 0);
+        let credCost = w.cost_credits || w.cost || w.price || 0;
+        let canAfford = (currentGang.credits || 0) >= credCost && tradingPostSession.availableTP >= tpCost;
+        let cleanName = w.name.replace(/'/g, "\\'");
+
+        html += `
+            <div style="background:#1a1a1a; border:1px solid #333; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; ${!canAfford ? 'opacity:0.5;' : ''}">
+                <div>
+                    <strong style="color:#fff;">${w.name}</strong><br>
+                    <small style="color:#aaa;">Coût : ${credCost} cr | Rareté : <span style="color:var(--accent-cyan); font-weight:bold;">${tpCost} TP</span></small>
+                </div>
+                <button class="${canAfford ? 'btn btn-cyan' : 'btn'}" ${!canAfford ? 'disabled' : ''} style="padding:4px 10px; font-size:12px;" onclick="buyTradingPostItem('Arme', '${cleanName}', ${credCost}, ${tpCost})">Acheter</button>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+            <h4>Équipements & Armures</h4>
+            <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
+    `;
+
+    dbEquip.forEach(e => {
+        let tpCost = e.cost_tp !== undefined ? e.cost_tp : (e.rarity || 0);
+        let credCost = e.cost_credits || e.cost || e.price || 0;
+        let canAfford = (currentGang.credits || 0) >= credCost && tradingPostSession.availableTP >= tpCost;
+        let cleanName = e.name.replace(/'/g, "\\'");
+
+        html += `
+            <div style="background:#1a1a1a; border:1px solid #333; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; ${!canAfford ? 'opacity:0.5;' : ''}">
+                <div>
+                    <strong style="color:#fff;">${e.name}</strong> <small style="color:#888;">(${e.type || 'Équipement'})</small><br>
+                    <small style="color:#aaa;">Coût : ${credCost} cr | Rareté : <span style="color:var(--accent-cyan); font-weight:bold;">${tpCost} TP</span></small>
+                </div>
+                <button class="${canAfford ? 'btn btn-cyan' : 'btn'}" ${!canAfford ? 'disabled' : ''} style="padding:4px 10px; font-size:12px;" onclick="buyTradingPostItem('Équipement', '${cleanName}', ${credCost}, ${tpCost})">Acheter</button>
+            </div>
+        `;
+    });
+
+    html += `
+            </div>
+        </div>
+        <br>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Fermer le Trading Post</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("🏬 Trading Post du Sous-Monde", html);
+}
+
+function buyTradingPostItem(category, itemName, credCost, tpCost) {
+    if (!currentGang) return;
+    if (!currentGang.stash) currentGang.stash = [];
+
+    if ((currentGang.credits || 0) < credCost) return alert("Crédits insuffisants !");
+    if (tradingPostSession.availableTP < tpCost) return alert("Points de TP insuffisants !");
+
+    currentGang.credits -= credCost;
+    tradingPostSession.availableTP -= tpCost;
+
+    currentGang.stash.push({
+        name: itemName,
+        type: category,
+        cost: credCost
+    });
+
+    safeSave();
+    renderTradingPostView();
+}
+
+// ==========================================
+// MONTÉE DE NIVEAU & AVANCÉES
+// ==========================================
+function openLevelUpModal(fighterId) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+
+    let xp = getFighterXP(m);
+    let rank = getFighterRank(xp);
+    let pending = getPendingAdvances(m);
+
+    if (pending <= 0) return alert("Aucune montée de niveau disponible pour ce guerrier.");
+
+    let statBonuses = [
+        { label: "+1 Ld", stat: "Ld", cost: 5 },
+        { label: "+1 Int", stat: "Int", cost: 5 },
+        { label: "+1 Cl", stat: "Cl", cost: 5 },
+        { label: "+1 Wil", stat: "Wil", cost: 5 },
+        { label: "+1 I", stat: "I", cost: 10 },
+        { label: "+1 M", stat: "M", cost: 10 },
+        { label: "+1 WS", stat: "WS", cost: 15 },
+        { label: "+1 BS", stat: "BS", cost: 15 },
+        { label: "+1 S", stat: "S", cost: 20 },
+        { label: "+1 T", stat: "T", cost: 20 },
+        { label: "+1 W", stat: "W", cost: 20 },
+        { label: "+1 A", stat: "A", cost: 20 },
+        { label: "+1 Sv", stat: "Sv", cost: 20 }
+    ];
+
+    let skillsDB = (typeof db !== 'undefined' && db.skills) ? db.skills : {};
+    let skillOptionsHTML = '';
+    Object.keys(skillsDB).forEach(cat => {
+        skillOptionsHTML += `<optgroup label="${cat.toUpperCase()}">`;
+        skillsDB[cat].forEach(sk => {
+            let skName = typeof sk === 'string' ? sk : sk.name;
+            skillOptionsHTML += `<option value="${skName}">${skName}</option>`;
+        });
+        skillOptionsHTML += `</optgroup>`;
+    });
+
+    let html = `
+        <div style="max-height:65vh; overflow-y:auto; padding-right:5px;">
+            <p>Combattant : <strong style="color:var(--accent-cyan);">${m.customName}</strong> (${m.charName})</p>
+            <p>XP : <strong>${xp}</strong> | Rang : <strong>${rank}</strong> | Avancées à choisir : <strong style="color:var(--accent-purple); font-size:16px;">${pending}</strong></p>
+            <hr style="margin:10px 0; border-color:#333;">
+
+            <h4>Option A : Augmentation de Caractéristique</h4>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:15px;">
+                ${statBonuses.map(b => `
+                    <button class="btn" style="padding:6px; font-size:12px; text-align:left;" onclick="confirmStatLevelUp('${m.id}', '${b.stat}', ${b.cost})">
+                        <strong>${b.label}</strong> <span style="color:#2ecc71;">(+${b.cost} cr)</span>
+                    </button>
+                `).join('')}
+            </div>
+
+            <hr style="margin:10px 0; border-color:#333;">
+
+            <h4>Option B : Choisir une Compétence</h4>
+            <div style="background:#111; padding:10px; border-radius:5px; border:1px solid #333;">
+                <label style="display:block; margin-bottom:4px; font-size:12px;">Compétence :</label>
+                <select id="levelup-skill-select" style="width:100%; padding:6px; margin-bottom:8px; font-size:12px;">
+                    ${skillOptionsHTML}
+                </select>
+
+                <label style="display:block; margin-bottom:4px; font-size:12px;">Valeur ajoutée au guerrier :</label>
+                <select id="levelup-skill-cost" style="width:100%; padding:6px; margin-bottom:10px; font-size:12px;">
+                    <option value="5">+5 crédits</option>
+                    <option value="10" selected>+10 crédits</option>
+                    <option value="15">+15 crédits</option>
+                    <option value="30">+30 crédits</option>
+                </select>
+
+                <button class="btn btn-cyan" style="width:100%;" onclick="confirmSkillLevelUp('${m.id}')">Valider la Compétence</button>
+            </div>
+        </div>
+        <br>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Fermer</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("⭐ Montée de Niveau", html);
+}
+
+function confirmStatLevelUp(fighterId, statKey, cost) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+
+    applyStatUpgrade(m, statKey);
+    m.totalCost = (m.totalCost || m.cost || 0) + cost;
+    m.cost = (m.cost || 0) + cost;
+    m.advancesCount = (m.advancesCount || 0) + 1;
+
+    safeSave();
+    alert(`Statistique ${statKey} augmentée (+${cost} cr au guerrier) !`);
+
+    if (getPendingAdvances(m) > 0) {
+        openLevelUpModal(fighterId);
+    } else {
+        if (typeof closeModal === 'function') closeModal();
+        refreshCurrentView();
+    }
+}
+
+function confirmSkillLevelUp(fighterId) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+
+    let skillSelect = document.getElementById('levelup-skill-select');
+    let costSelect = document.getElementById('levelup-skill-cost');
+
+    if (!skillSelect || !costSelect) return;
+
+    let skillName = skillSelect.value;
+    let cost = parseInt(costSelect.value) || 0;
+
+    if (!m.skills) m.skills = [];
+
+    let foundObj = null;
+    if (typeof db !== 'undefined' && db.skills) {
+        for (let cat in db.skills) {
+            let match = db.skills[cat].find(sk => (typeof sk === 'string' ? sk : sk.name) === skillName);
+            if (match) { foundObj = match; break; }
+        }
+    }
+
+    m.skills.push(foundObj ? JSON.parse(JSON.stringify(foundObj)) : skillName);
+    m.totalCost = (m.totalCost || m.cost || 0) + cost;
+    m.cost = (m.cost || 0) + cost;
+    m.advancesCount = (m.advancesCount || 0) + 1;
+
+    safeSave();
+    alert(`Compétence ${skillName} ajoutée (+${cost} cr au guerrier) !`);
+
+    if (getPendingAdvances(m) > 0) {
+        openLevelUpModal(fighterId);
+    } else {
+        if (typeof closeModal === 'function') closeModal();
+        refreshCurrentView();
+    }
+}
+
+function refreshCurrentView() {
+    let container = document.getElementById('main-content');
+    if (typeof appState !== 'undefined' && appState.view === 'post-battle') {
+        renderPostBattleView(container);
+    } else {
+        renderPostCycleView(container);
+    }
+}
+
+function openStatUpgradeModal(fighterId) {
+    openLevelUpModal(fighterId);
+}
+
+function openSkillSelectModal(fighterId) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+
+    let charDef = (typeof db !== 'undefined' && db.characters) ? db.characters.find(c => c.name === m.charName || c.id === m.charId) : null;
+    let primaries = charDef ? (charDef.primary_skills || []) : [];
+    let secondaries = charDef ? (charDef.secondary_skills || []) : [];
+
+    const norm = s => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    let primaryNorms = primaries.map(s => norm(s));
+    let secondaryNorms = secondaries.map(s => norm(s));
+
+    let html = `<h3>Compétences pour ${m.customName}</h3><div style="max-height:60vh; overflow-y:auto; padding-right:5px;">`;
+
+    let skillsDB = (typeof db !== 'undefined' && db.skills) ? db.skills : {};
+    Object.keys(skillsDB).forEach(cat => {
+        let catNorm = norm(cat);
+        let isPrimary = primaryNorms.includes(catNorm);
+        let isSecondary = secondaryNorms.includes(catNorm);
+
+        html += `
+            <div style="border:1px solid #333; padding:10px; margin-bottom:10px; border-radius:4px; background:#111;">
+                <strong style="text-transform:uppercase; color:${isPrimary ? 'var(--accent-cyan)' : (isSecondary ? 'var(--accent-purple)' : '#aaa')}; display:block; margin-bottom:8px;">
+                    ${cat} ${isPrimary ? '(Primaire)' : (isSecondary ? '(Secondaire)' : '(Autre)')}
+                </strong>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px 12px;">
+                    ${skillsDB[cat].map(sk => {
+                        let skName = typeof sk === 'string' ? sk : sk.name;
+                        let checked = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name) === skName) ? 'checked' : '';
+                        return `
+                            <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:#ddd;">
+                                <input type="checkbox" ${checked} onchange="toggleFighterSkill('${m.id}', '${skName}', this.checked)" style="margin:0; width:16px; height:16px; flex-shrink:0; cursor:pointer;">
+                                <span>${skName}</span>
+                            </label>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    });
+
+    html += `</div><br><button class="btn btn-cyan" onclick="if (typeof closeModal==='function') closeModal()">Valider & Fermer</button>`;
+    if (typeof openModal === 'function') openModal("Menu des Compétences", html);
+}
+
+function toggleFighterSkill(fighterId, skillName, add) {
+    if (!currentGang) return;
+    let m = currentGang.members.find(x => x.id === fighterId);
+    if (!m) return;
+    if (!m.skills) m.skills = [];
+
+    if (add) {
+        if (!m.skills.some(s => (typeof s === 'string' ? s : s.name) === skillName)) {
+            let foundObj = null;
+            if (typeof db !== 'undefined' && db.skills) {
+                for (let cat in db.skills) {
+                    let match = db.skills[cat].find(sk => (typeof sk === 'string' ? sk : sk.name) === skillName);
+                    if (match) { foundObj = match; break; }
+                }
+            }
+            m.skills.push(foundObj ? JSON.parse(JSON.stringify(foundObj)) : skillName);
+        }
+    } else {
+        m.skills = m.skills.filter(s => (typeof s === 'string' ? s : s.name) !== skillName);
+    }
+    safeSave();
+}
