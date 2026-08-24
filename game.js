@@ -988,6 +988,7 @@ function renderPostCycleView(container) {
 
     updateTopBar();
     if (!currentGang.territories) currentGang.territories = [];
+    if (!postCycleSession.territoryUsed) postCycleSession.territoryUsed = {};
 
     let html = `
         <div class="card">
@@ -1020,8 +1021,8 @@ function renderPostCycleView(container) {
                         <small>Tous les guerriers disponibles</small>
                     </button>
                     <button class="btn btn-cyan" style="width:100%; text-align:left;" onclick="collectAllTerritoryIncome()">
-                        💰 <strong>Collecte des Territoires</strong><br>
-                        <small>Récolter les revenus automatiques des territoires</small>
+                        💰 <strong>Collecte des Territoires non exploités</strong><br>
+                        <small>Récolter les crédits automatiques des territoires disponibles</small>
                     </button>
                 </div>
 
@@ -1035,7 +1036,6 @@ function renderPostCycleView(container) {
 
             <hr style="margin: 15px 0; border-color: #333;">
             
-            <!-- SECTION : TERRITOIRES POSSÉDÉS & OPTIONS -->
             <h3>🗺️ Territoires Possédés & Options</h3>
             <div style="background:var(--bg-dark, #111); padding:12px; border-radius:6px; margin-bottom:15px;">
     `;
@@ -1043,18 +1043,31 @@ function renderPostCycleView(container) {
     if (currentGang.territories.length === 0) {
         html += `<p style="color:#888;">Aucun territoire contrôlé pour le moment.</p>`;
     } else {
-        currentGang.territories.forEach((terId) => {
+        currentGang.territories.forEach((terId, idx) => {
             let tDef = getTerritoryDef(terId) || { name: terId, desc: "Territoire inconnu" };
+            let usage = postCycleSession.territoryUsed[idx];
+
+            let statusMarkup = '';
+            if (usage === 'credits') {
+                statusMarkup = `<span style="color:#2ecc71; font-size:12px; font-weight:bold;">✅ Crédits récoltés</span>`;
+            } else if (usage === 'option') {
+                statusMarkup = `<span style="color:var(--accent-cyan); font-size:12px; font-weight:bold;">🎁 Option utilisée</span>`;
+            } else if (tDef.optionType) {
+                statusMarkup = `
+                    <button class="btn btn-cyan" style="padding:4px 10px; font-size:12px;" onclick="claimTerritoryOption('${tDef.id || terId}', ${idx})">
+                        🎁 ${tDef.optionText || "Utiliser l'option"}
+                    </button>
+                `;
+            }
+
             html += `
                 <div style="border:1px solid #333; padding:8px; margin-bottom:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div>
                         <strong>${tDef.name}</strong> — <small style="color:#ccc;">${tDef.desc || ''}</small>
                     </div>
-                    ${tDef.optionType ? `
-                        <button class="btn btn-cyan" style="padding:4px 10px; font-size:12px;" onclick="claimTerritoryOption('${tDef.id || terId}')">
-                            🎁 ${tDef.optionText || "Utiliser l'option"}
-                        </button>
-                    ` : ''}
+                    <div>
+                        ${statusMarkup}
+                    </div>
                 </div>
             `;
         });
@@ -1100,7 +1113,8 @@ function renderPostCycleView(container) {
 // REGISTRE CENTRAL DES ACTIONS POST-CYCLE (1 ACTION / GUERRIER)
 // ==========================================
 let postCycleSession = {
-    assignments: {}
+    assignments: {},
+    territoryUsed: {}
 };
 
 function isFighterBusy(fId) {
@@ -1365,82 +1379,7 @@ function confirmTraining() {
     renderPostCycleView(document.getElementById('main-content'));
 }
 
-// 5. COLLECTE DES TERRITOIRES
-function actionCollectTerritories() {
-    if (!currentGang || !currentGang.territories || currentGang.territories.length === 0) return alert("Le gang ne possède aucun territoire à exploiter.");
-
-    let html = `
-        <p>Pour chaque territoire, choisissez si vous encaissez le revenu en crédits ou si vous activez l'effet alternatif :</p>
-        <hr style="margin:10px 0; border-color:#333;">
-        <div style="max-height:50vh; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
-    `;
-
-    currentGang.territories.forEach((tName, idx) => {
-        let tData = getTerritoryDef(tName);
-        let income = tData ? tData.income : 15;
-
-        html += `
-            <div style="border:1px solid #444; padding:10px; border-radius:5px; background:#111;">
-                <strong style="color:var(--accent-cyan);">${tName}</strong><br>
-                <small style="color:#aaa;">${tData ? tData.desc : ''}</small><br><br>
-                <select id="collect-choice-${idx}" style="padding:6px; font-size:12px; margin:0;">
-                    <option value="credits">💰 Encaisser les ${income} crédits</option>
-                    ${tData && tData.optionText ? `<option value="option">🎁 ${tData.optionText}</option>` : ''}
-                </select>
-            </div>
-        `;
-    });
-
-    html += `
-        </div><br>
-        <button class="btn btn-cyan" onclick="confirmCollectTerritories()">Valider la Récolte</button>
-        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Annuler</button>
-    `;
-
-    if (typeof openModal === 'function') openModal("💰 Récolte des Territoires", html);
-}
-
-function confirmCollectTerritories() {
-    if (!currentGang || !currentGang.territories) return;
-
-    let totalCreditsGained = 0;
-    let summaryLog = [];
-
-    if (!currentGang.stash) currentGang.stash = [];
-
-    currentGang.territories.forEach((tName, idx) => {
-        let selectElem = document.getElementById(`collect-choice-${idx}`);
-        let choice = selectElem ? selectElem.value : 'credits';
-        let tData = getTerritoryDef(tName);
-        let baseIncome = tData ? tData.income : 15;
-
-        if (choice === 'credits') {
-            totalCreditsGained += baseIncome;
-        } else if (choice === 'option' && tData) {
-            if (tData.optionType === 'items_suits') {
-                for(let i = 0; i < 3; i++) currentGang.stash.push({ name: "Combinaison de protection", type: "Armure", cost: 10 });
-                summaryLog.push(`• ${tName} : 3 Combinaisons de protection ajoutées à la réserve.`);
-            } else if (tData.optionType === 'items_respirators') {
-                for(let i = 0; i < 2; i++) currentGang.stash.push({ name: "Respirateur", type: "Personnel", cost: 15 });
-                summaryLog.push(`• ${tName} : 2 Respirateurs ajoutés à la réserve.`);
-            } else if (tData.optionType.startsWith('discount_')) {
-                summaryLog.push(`• ${tName} : Réduction appliquée pour le recrutement ce cycle.`);
-            }
-        }
-    });
-
-    currentGang.credits = (currentGang.credits || 0) + totalCreditsGained;
-    safeSave();
-
-    let message = `Récolte terminée !\n• Crédits gagnés : +${totalCreditsGained} cr\n`;
-    if (summaryLog.length > 0) message += summaryLog.join("\n");
-
-    alert(message);
-    if (typeof closeModal === 'function') closeModal();
-    renderPostCycleView(document.getElementById('main-content'));
-}
-
-// 6. TRADING POST
+// 5. TRADING POST
 let tradingPostSession = {
     selectedFighterIds: [],
     availableTP: 0,
@@ -1897,33 +1836,44 @@ function toggleFighterSkill(fighterId, skillName, add) {
 // ACTIONS ET RÉCOLTE DE TERRITOIRES
 // ==========================================
 
-// 1. Récolte automatique de tous les revenus de territoires
+// 1. Récolte automatique des revenus (exclut les territoires déjà exploités)
 function collectAllTerritoryIncome() {
     if (!currentGang || !currentGang.territories) return;
+    if (!postCycleSession.territoryUsed) postCycleSession.territoryUsed = {};
 
     let totalIncome = 0;
-    currentGang.territories.forEach(terId => {
+    let collectedCount = 0;
+
+    currentGang.territories.forEach((terId, idx) => {
+        if (postCycleSession.territoryUsed[idx]) return;
+
         let tDef = getTerritoryDef(terId);
         if (tDef && tDef.income) {
             totalIncome += tDef.income;
+            postCycleSession.territoryUsed[idx] = 'credits';
+            collectedCount++;
         }
     });
 
-    if (totalIncome > 0) {
+    if (collectedCount > 0) {
         currentGang.credits += totalIncome;
-        alert(`Récolte effectuée : +${totalIncome} crédits ajoutés aux caisses du gang !`);
+        alert(`Récolte effectuée (${collectedCount} territoire(s)) : +${totalIncome} crédits ajoutés aux caisses du gang !`);
         safeSave();
-        if (typeof renderPostCycleView === 'function') {
-            renderPostCycleView(document.getElementById('main-content'));
-        }
+        renderPostCycleView(document.getElementById('main-content'));
     } else {
-        alert("Aucun revenu automatique à collecter.");
+        alert("Aucun territoire disponible pour la récolte (tous déjà exploités ce cycle).");
     }
 }
 
 // 2. Traitement des options de territoires (Recrutement à prix réduit)
-function claimTerritoryOption(terId) {
+function claimTerritoryOption(terId, idx) {
     if (!currentGang) return;
+    if (!postCycleSession.territoryUsed) postCycleSession.territoryUsed = {};
+
+    if (postCycleSession.territoryUsed[idx]) {
+        return alert("Ce territoire a déjà été exploité pendant ce cycle.");
+    }
+
     let tDef = getTerritoryDef(terId);
     if (!tDef || !tDef.optionType) return;
 
@@ -1946,7 +1896,7 @@ function claimTerritoryOption(terId) {
         }
 
         if (gangGangers.length === 1) {
-            executeDiscountRecruitment(gangGangers[0], 25);
+            executeDiscountRecruitment(gangGangers[0], 25, idx);
         } else {
             let html = `<h3>Recruter un Ganger (Ristourne Settlement -25c)</h3><br>`;
             gangGangers.forEach(g => {
@@ -1954,7 +1904,7 @@ function claimTerritoryOption(terId) {
                 html += `
                     <div class="fighter-item">
                         <span><strong>${g.name}</strong> — Coût réduit : ${finalCost}c <small style="text-decoration:line-through; color:#888;">(${g.cost}c)</small></span>
-                        <button class="btn btn-cyan" onclick="executeDiscountRecruitmentById('${g.id}', 25)">Recruter</button>
+                        <button class="btn btn-cyan" onclick="executeDiscountRecruitmentById('${g.id}', 25, ${idx})">Recruter</button>
                     </div>
                 `;
             });
@@ -1966,17 +1916,17 @@ function claimTerritoryOption(terId) {
         let charDef = db.characters.find(c => c.id === targetInfo.charId);
         if (!charDef) return alert("Profil introuvable.");
 
-        executeDiscountRecruitment(charDef, targetInfo.discount);
+        executeDiscountRecruitment(charDef, targetInfo.discount, idx);
     }
 }
 
-function executeDiscountRecruitmentById(charId, discount) {
+function executeDiscountRecruitmentById(charId, discount, territoryIdx) {
     if (typeof closeModal === 'function') closeModal();
     let charDef = db.characters.find(c => c.id === charId);
-    if (charDef) executeDiscountRecruitment(charDef, discount);
+    if (charDef) executeDiscountRecruitment(charDef, discount, territoryIdx);
 }
 
-function executeDiscountRecruitment(charDef, discount) {
+function executeDiscountRecruitment(charDef, discount, territoryIdx) {
     let finalCost = Math.max(0, charDef.cost - discount);
 
     if (currentGang.credits < finalCost) {
@@ -2014,10 +1964,14 @@ function executeDiscountRecruitment(charDef, discount) {
 
     currentGang.credits -= finalCost;
     currentGang.members.push(newFighter);
+
+    if (!postCycleSession.territoryUsed) postCycleSession.territoryUsed = {};
+    if (territoryIdx !== undefined && territoryIdx !== null) {
+        postCycleSession.territoryUsed[territoryIdx] = 'option';
+    }
+
     safeSave();
 
     alert(`${charDef.name} a été recruté pour ${finalCost}c (réduction de ${discount}c appliquée) !`);
-    if (typeof renderPostCycleView === 'function') {
-        renderPostCycleView(document.getElementById('main-content'));
-    }
+    renderPostCycleView(document.getElementById('main-content'));
 }
