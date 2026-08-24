@@ -981,6 +981,7 @@ function renderPostCycleView(container) {
     }
 
     updateTopBar();
+    if (!currentGang.territories) currentGang.territories = [];
 
     let html = `
         <div class="card">
@@ -1012,7 +1013,7 @@ function renderPostCycleView(container) {
                         🏋️ <strong>Entraînement</strong> (+2 XP / guerrier)<br>
                         <small>Tous les guerriers disponibles</small>
                     </button>
-                    <button class="btn" style="width:100%; text-align:left;" onclick="actionCollectTerritories()">
+                    <button class="btn btn-cyan" style="width:100%; text-align:left;" onclick="collectAllTerritoryIncome()">
                         💰 <strong>Collecte des Territoires</strong><br>
                         <small>Récolter les revenus automatiques des territoires</small>
                     </button>
@@ -1024,6 +1025,36 @@ function renderPostCycleView(container) {
                     <p>Crédits du gang : <strong style="color:var(--accent-cyan, #00d2d3);">${currentGang.credits || 0} cr</strong></p>
                     <button class="btn btn-cyan" style="width:100%;" onclick="openTradingPostSetupModal()">Visiter le Trading Post</button>
                 </div>
+            </div>
+
+            <hr style="margin: 15px 0; border-color: #333;">
+            
+            <!-- NOUVELLE SECTION : TERRITOIRES & OPTIONS DE RECRUTEMENT -->
+            <h3>🗺️ Territoires Possédés & Options</h3>
+            <div style="background:var(--bg-dark, #111); padding:12px; border-radius:6px; margin-bottom:15px;">
+    `;
+
+    if (currentGang.territories.length === 0) {
+        html += `<p style="color:#888;">Aucun territoire contrôlé pour le moment.</p>`;
+    } else {
+        currentGang.territories.forEach((terId) => {
+            let tDef = (db.territories || []).find(t => t.id === terId) || { name: terId, desc: "Territoire inconnu" };
+            html += `
+                <div style="border:1px solid #333; padding:8px; margin-bottom:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                    <div>
+                        <strong>${tDef.name}</strong> — <small style="color:#ccc;">${tDef.desc || ''}</small>
+                    </div>
+                    ${tDef.optionType ? `
+                        <button class="btn btn-cyan" style="padding:4px 10px; font-size:12px;" onclick="claimTerritoryOption('${tDef.id}')">
+                            🎁 ${tDef.optionText || "Utiliser l'option"}
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+        });
+    }
+
+    html += `
             </div>
 
             <hr style="margin: 15px 0; border-color: #333;">
@@ -1058,7 +1089,6 @@ function renderPostCycleView(container) {
 
     container.innerHTML = html;
 }
-
 // ==========================================
 // REGISTRE CENTRAL DES ACTIONS POST-CYCLE (1 ACTION / GUERRIER)
 // ==========================================
@@ -1856,4 +1886,135 @@ function toggleFighterSkill(fighterId, skillName, add) {
         m.skills = m.skills.filter(s => (typeof s === 'string' ? s : s.name) !== skillName);
     }
     safeSave();
+}
+
+// 1. Récolte automatique de tous les revenus de territoires (hors options)
+function collectAllTerritoryIncome() {
+    if (!currentGang || !currentGang.territories) return;
+
+    let totalIncome = 0;
+    currentGang.territories.forEach(terId => {
+        let tDef = (db.territories || []).find(t => t.id === terId);
+        if (tDef && tDef.income && !tDef.optionType) {
+            totalIncome += tDef.income;
+        }
+    });
+
+    if (totalIncome > 0) {
+        currentGang.credits += totalIncome;
+        alert(`Récolte effectuée : +${totalIncome} crédits ajoutés aux caisses du gang !`);
+        safeSave();
+        if (typeof renderPostCycleView === 'function') {
+            renderPostCycleView(document.getElementById('main-content'));
+        }
+    } else {
+        alert("Aucun revenu automatique à collecter.");
+    }
+}
+
+// 2. Traitement des options de territoires (Recrutement à prix réduit)
+function claimTerritoryOption(terId) {
+    if (!currentGang) return;
+    let tDef = (db.territories || []).find(t => t.id === terId);
+    if (!tDef || !tDef.optionType) return;
+
+    // Mapping des réductions pour mercenaires / hangers-on
+    const mercDiscountMap = {
+        'discount_doc': { charId: 'merc_rogue_doc', discount: 30 },
+        'discount_ammojack': { charId: 'merc_ammo_jack', discount: 30 },
+        'discount_slopper': { charId: 'merc_slopper', discount: 30 },
+        'discount_watcher': { charId: 'merc_hive_watcher', discount: 30 },
+        'discount_runner': { charId: 'merc_dome_runner', discount: 30 }
+    };
+
+    if (tDef.optionType === 'discount_ganger') {
+        // CAS GANGER DE BASE (Settlement)
+        // Recherche dynamique de tous les gangers de clan (hors mercenaires)
+        let gangGangers = db.characters.filter(c => 
+            !c.id.startsWith('merc_') && 
+            (c.type || []).some(t => t.toLowerCase() === 'ganger')
+        );
+
+        if (gangGangers.length === 0) {
+            return alert("Aucun profil de Ganger trouvé dans ce gang.");
+        }
+
+        if (gangGangers.length === 1) {
+            // Un seul profil (ex: Escher Gang Sister)
+            executeDiscountRecruitment(gangGangers[0], 25);
+        } else {
+            // Plus de deux profils (ex: Cawdor) -> Choix dans une modale
+            let html = `<h3>Recruter un Ganger (Ristourne Settlement -25c)</h3><br>`;
+            gangGangers.forEach(g => {
+                let finalCost = Math.max(0, g.cost - 25);
+                html += `
+                    <div class="fighter-item">
+                        <span><strong>${g.name}</strong> — Coût réduit : ${finalCost}c <small style="text-decoration:line-through; color:#888;">(${g.cost}c)</small></span>
+                        <button class="btn-cyan" onclick="executeDiscountRecruitmentById('${g.id}', 25)">Recruter</button>
+                    </div>
+                `;
+            });
+            openModal("Choix du Ganger à recruter", html);
+        }
+    } 
+    else if (mercDiscountMap[tDef.optionType]) {
+        // CAS MERCENAIRES / HANGERS-ON
+        let targetInfo = mercDiscountMap[tDef.optionType];
+        let charDef = db.characters.find(c => c.id === targetInfo.charId);
+        if (!charDef) return alert("Profil introuvable.");
+
+        executeDiscountRecruitment(charDef, targetInfo.discount);
+    }
+}
+
+function executeDiscountRecruitmentById(charId, discount) {
+    if (typeof closeModal === 'function') closeModal();
+    let charDef = db.characters.find(c => c.id === charId);
+    if (charDef) executeDiscountRecruitment(charDef, discount);
+}
+
+function executeDiscountRecruitment(charDef, discount) {
+    let finalCost = Math.max(0, charDef.cost - discount);
+
+    if (currentGang.credits < finalCost) {
+        return alert(`Crédits insuffisants. Requis : ${finalCost}c | Disponible : ${currentGang.credits}c`);
+    }
+
+    let defaultWeapons = [];
+    if (charDef.default_weapons) {
+        charDef.default_weapons.forEach(wId => {
+            let wObj = db.weapons.find(w => w.id === wId);
+            if (wObj) defaultWeapons.push(JSON.parse(JSON.stringify(wObj)));
+        });
+    }
+
+    let defaultEquip = [];
+    if (charDef.default_equipment) {
+        charDef.default_equipment.forEach(eId => {
+            let eObj = db.equipment.find(e => e.id === eId);
+            if (eObj) defaultEquip.push(JSON.parse(JSON.stringify(eObj)));
+        });
+    }
+
+    let newFighter = {
+        id: generateId(),
+        charId: charDef.id,
+        charName: charDef.name,
+        customName: charDef.name,
+        type: charDef.type,
+        stats: JSON.parse(JSON.stringify(charDef.stats)),
+        weapons: defaultWeapons,
+        equipment: defaultEquip,
+        skills: [],
+        totalCost: charDef.cost
+    };
+
+    currentGang.credits -= finalCost;
+    currentGang.members.push(newFighter);
+    safeSave();
+
+    alert(`${charDef.name} a été recruté pour ${finalCost}c (réduction de ${discount}c appliquée) !`);
+    if (typeof renderPostCycleView === 'function') {
+        renderPostCycleView(document.getElementById('main-content'));
+    }
 }
