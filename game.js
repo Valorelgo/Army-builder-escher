@@ -28,6 +28,12 @@ const PERMANENT_INJURIES = [
     "Mort"
 ];
 
+// Fonction utilitaire de recherche de territoire (compatibilité ID / Nom)
+function getTerritoryDef(terId) {
+    if (typeof db === 'undefined' || !db.territories) return null;
+    return db.territories.find(t => t.id === terId || t.name === terId);
+}
+
 // ==========================================
 // PALIERS D'EXPÉRIENCE & RANGS
 // ==========================================
@@ -292,7 +298,7 @@ function openTerritoriesModal() {
     } else {
         html += `<div style="display:flex; flex-direction:column; gap:8px; margin-bottom:15px;">`;
         currentGang.territories.forEach((tName, idx) => {
-            let tData = dbTerritories.find(x => x.name === tName);
+            let tData = getTerritoryDef(tName);
             let descText = tData ? tData.desc : 'Revenu : +15 cr';
             html += `
                 <div style="background:#111; border:1px solid var(--accent-purple); padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center;">
@@ -314,7 +320,7 @@ function openTerritoriesModal() {
     `;
 
     dbTerritories.forEach(t => {
-        let count = currentGang.territories.filter(x => x === t.name).length;
+        let count = currentGang.territories.filter(x => x === t.name || x === t.id).length;
         let cleanName = t.name.replace(/'/g, "\\'");
         html += `
             <div style="border:1px solid #444; padding:8px; border-radius:5px; background:#1a1a1a;">
@@ -817,7 +823,7 @@ function renderPostBattleView(container) {
     if (!container) return;
 
     if (!currentGang) {
-        container.innerHTML = `<div class="card"><p>Aucun gang chargé.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
+        container.innerHTML = `<div class="card"><p>Aucun gang charged.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
         return;
     }
 
@@ -1029,7 +1035,7 @@ function renderPostCycleView(container) {
 
             <hr style="margin: 15px 0; border-color: #333;">
             
-            <!-- NOUVELLE SECTION : TERRITOIRES & OPTIONS DE RECRUTEMENT -->
+            <!-- SECTION : TERRITOIRES POSSÉDÉS & OPTIONS -->
             <h3>🗺️ Territoires Possédés & Options</h3>
             <div style="background:var(--bg-dark, #111); padding:12px; border-radius:6px; margin-bottom:15px;">
     `;
@@ -1038,14 +1044,14 @@ function renderPostCycleView(container) {
         html += `<p style="color:#888;">Aucun territoire contrôlé pour le moment.</p>`;
     } else {
         currentGang.territories.forEach((terId) => {
-            let tDef = (db.territories || []).find(t => t.id === terId) || { name: terId, desc: "Territoire inconnu" };
+            let tDef = getTerritoryDef(terId) || { name: terId, desc: "Territoire inconnu" };
             html += `
                 <div style="border:1px solid #333; padding:8px; margin-bottom:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                     <div>
                         <strong>${tDef.name}</strong> — <small style="color:#ccc;">${tDef.desc || ''}</small>
                     </div>
                     ${tDef.optionType ? `
-                        <button class="btn btn-cyan" style="padding:4px 10px; font-size:12px;" onclick="claimTerritoryOption('${tDef.id}')">
+                        <button class="btn btn-cyan" style="padding:4px 10px; font-size:12px;" onclick="claimTerritoryOption('${tDef.id || terId}')">
                             🎁 ${tDef.optionText || "Utiliser l'option"}
                         </button>
                     ` : ''}
@@ -1089,6 +1095,7 @@ function renderPostCycleView(container) {
 
     container.innerHTML = html;
 }
+
 // ==========================================
 // REGISTRE CENTRAL DES ACTIONS POST-CYCLE (1 ACTION / GUERRIER)
 // ==========================================
@@ -1362,7 +1369,6 @@ function confirmTraining() {
 function actionCollectTerritories() {
     if (!currentGang || !currentGang.territories || currentGang.territories.length === 0) return alert("Le gang ne possède aucun territoire à exploiter.");
 
-    let dbTerritories = (typeof db !== 'undefined' && db.territories) ? db.territories : [];
     let html = `
         <p>Pour chaque territoire, choisissez si vous encaissez le revenu en crédits ou si vous activez l'effet alternatif :</p>
         <hr style="margin:10px 0; border-color:#333;">
@@ -1370,7 +1376,7 @@ function actionCollectTerritories() {
     `;
 
     currentGang.territories.forEach((tName, idx) => {
-        let tData = dbTerritories.find(x => x.name === tName);
+        let tData = getTerritoryDef(tName);
         let income = tData ? tData.income : 15;
 
         html += `
@@ -1396,7 +1402,6 @@ function actionCollectTerritories() {
 
 function confirmCollectTerritories() {
     if (!currentGang || !currentGang.territories) return;
-    let dbTerritories = (typeof db !== 'undefined' && db.territories) ? db.territories : [];
 
     let totalCreditsGained = 0;
     let summaryLog = [];
@@ -1406,7 +1411,7 @@ function confirmCollectTerritories() {
     currentGang.territories.forEach((tName, idx) => {
         let selectElem = document.getElementById(`collect-choice-${idx}`);
         let choice = selectElem ? selectElem.value : 'credits';
-        let tData = dbTerritories.find(x => x.name === tName);
+        let tData = getTerritoryDef(tName);
         let baseIncome = tData ? tData.income : 15;
 
         if (choice === 'credits') {
@@ -1493,7 +1498,7 @@ function openTradingPostSetupModal() {
         });
     }
 
-    let techBazaarCount = (currentGang.territories || []).filter(t => t.toLowerCase() === "tech bazaar").length;
+    let techBazaarCount = (currentGang.territories || []).filter(t => t.toLowerCase() === "tech bazaar" || t.toLowerCase() === "ter_tech_bazaar").length;
     if (techBazaarCount > 0) {
         html += `<p style="color:var(--accent-purple); font-size:12px; margin-top:10px;">🚩 Territoires Tech Bazaar (${techBazaarCount}) : +${techBazaarCount} TP automatique(s).</p>`;
     }
@@ -1549,7 +1554,7 @@ function confirmTradingPostFixedTP() {
         log.push(`${m.customName || m.charName} : ${fighterTP} TP (${details.join(', ')})`);
     });
 
-    let techBazaarCount = (currentGang.territories || []).filter(t => t.toLowerCase() === "tech bazaar").length;
+    let techBazaarCount = (currentGang.territories || []).filter(t => t.toLowerCase() === "tech bazaar" || t.toLowerCase() === "ter_tech_bazaar").length;
     if (techBazaarCount > 0) {
         totalTP += techBazaarCount;
         log.push(`Territoire(s) Tech Bazaar : +${techBazaarCount} TP`);
@@ -1888,14 +1893,18 @@ function toggleFighterSkill(fighterId, skillName, add) {
     safeSave();
 }
 
-// 1. Récolte automatique de tous les revenus de territoires (hors options)
+// ==========================================
+// ACTIONS ET RÉCOLTE DE TERRITOIRES
+// ==========================================
+
+// 1. Récolte automatique de tous les revenus de territoires
 function collectAllTerritoryIncome() {
     if (!currentGang || !currentGang.territories) return;
 
     let totalIncome = 0;
     currentGang.territories.forEach(terId => {
-        let tDef = (db.territories || []).find(t => t.id === terId);
-        if (tDef && tDef.income && !tDef.optionType) {
+        let tDef = getTerritoryDef(terId);
+        if (tDef && tDef.income) {
             totalIncome += tDef.income;
         }
     });
@@ -1915,10 +1924,9 @@ function collectAllTerritoryIncome() {
 // 2. Traitement des options de territoires (Recrutement à prix réduit)
 function claimTerritoryOption(terId) {
     if (!currentGang) return;
-    let tDef = (db.territories || []).find(t => t.id === terId);
+    let tDef = getTerritoryDef(terId);
     if (!tDef || !tDef.optionType) return;
 
-    // Mapping des réductions pour mercenaires / hangers-on
     const mercDiscountMap = {
         'discount_doc': { charId: 'merc_rogue_doc', discount: 30 },
         'discount_ammojack': { charId: 'merc_ammo_jack', discount: 30 },
@@ -1928,8 +1936,6 @@ function claimTerritoryOption(terId) {
     };
 
     if (tDef.optionType === 'discount_ganger') {
-        // CAS GANGER DE BASE (Settlement)
-        // Recherche dynamique de tous les gangers de clan (hors mercenaires)
         let gangGangers = db.characters.filter(c => 
             !c.id.startsWith('merc_') && 
             (c.type || []).some(t => t.toLowerCase() === 'ganger')
@@ -1940,17 +1946,15 @@ function claimTerritoryOption(terId) {
         }
 
         if (gangGangers.length === 1) {
-            // Un seul profil (ex: Escher Gang Sister)
             executeDiscountRecruitment(gangGangers[0], 25);
         } else {
-            // Plus de deux profils (ex: Cawdor) -> Choix dans une modale
             let html = `<h3>Recruter un Ganger (Ristourne Settlement -25c)</h3><br>`;
             gangGangers.forEach(g => {
                 let finalCost = Math.max(0, g.cost - 25);
                 html += `
                     <div class="fighter-item">
                         <span><strong>${g.name}</strong> — Coût réduit : ${finalCost}c <small style="text-decoration:line-through; color:#888;">(${g.cost}c)</small></span>
-                        <button class="btn-cyan" onclick="executeDiscountRecruitmentById('${g.id}', 25)">Recruter</button>
+                        <button class="btn btn-cyan" onclick="executeDiscountRecruitmentById('${g.id}', 25)">Recruter</button>
                     </div>
                 `;
             });
@@ -1958,7 +1962,6 @@ function claimTerritoryOption(terId) {
         }
     } 
     else if (mercDiscountMap[tDef.optionType]) {
-        // CAS MERCENAIRES / HANGERS-ON
         let targetInfo = mercDiscountMap[tDef.optionType];
         let charDef = db.characters.find(c => c.id === targetInfo.charId);
         if (!charDef) return alert("Profil introuvable.");
