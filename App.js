@@ -848,8 +848,7 @@ function openWeaponSelectModal() {
     const isCampaign = currentGang && currentGang.isEstablished;
 
     if (isCampaign) {
-        // EN CAMPAGNE : Pioche dans le Stash
-        html += `<h4>Armes disponibles dans la Réserve (Stash) :</h4><br>`;
+        html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash) :</h4>`;
         if (!currentGang.stash) currentGang.stash = [];
 
         let availableWeapons = currentGang.stash.filter(item => {
@@ -858,38 +857,38 @@ function openWeaponSelectModal() {
         });
 
         if (availableWeapons.length === 0) {
-            html += `<p style="color:#888;">Aucune arme disponible dans la réserve. Achetez-en au Trading Post lors du Post-Cycle.</p>`;
+            html += `<p style="color:#888; font-size:12px; margin-bottom:10px;">Aucune arme disponible dans la réserve.</p>`;
         } else {
-            availableWeapons.forEach((stItem, stashIdx) => {
+            availableWeapons.forEach((stItem) => {
                 let itemName = typeof stItem === 'string' ? stItem : stItem.name;
                 let slotsNeeded = itemName.includes('*') ? 2 : 1;
                 let isAvailable = (usedSlots + slotsNeeded <= 3);
 
                 html += `
                     <div class="fighter-item ${!isAvailable ? 'disabled' : ''}">
-                        <span><strong>${itemName}</strong> ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''}</span>
-                        ${isAvailable ? `<button class="btn-cyan" onclick="addWeaponFromStash('${itemName}')">Équiper depuis Réserve</button>` : '<small>Emplacements insuffisants</small>'}
+                        <span><strong>${itemName}</strong> ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''} <small style="color:#2ecc71;">(Réserve - 0 cr)</small></span>
+                        ${isAvailable ? `<button class="btn-cyan" onclick="addWeaponFromStash('${itemName}')">Équiper (Stash)</button>` : '<small>Emplacements insuffisants</small>'}
                     </div>
                 `;
             });
         }
+        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter sur la Liste de Clan :</h4>`;
+    }
+
+    const availableWeapons = db.weapons.filter(w => w.is_gang_weapon === true && !w.is_merc_weapon);
+    if (availableWeapons.length === 0) {
+        html += `<p style="color:#888; font-size:12px;">Aucune arme de clan disponible.</p>`;
     } else {
-        // A LA CREATION : Achats sur la liste de clan
-        const availableWeapons = db.weapons.filter(w => w.is_gang_weapon === true && !w.is_merc_weapon);
-        if (availableWeapons.length === 0) {
-            html += `<p>Aucune arme de clan disponible.</p>`;
-        } else {
-            availableWeapons.forEach(w => {
-                let slotsNeeded = w.name.includes('*') ? 2 : 1;
-                let isAvailable = (usedSlots + slotsNeeded <= 3);
-                html += `
-                    <div class="fighter-item ${!isAvailable ? 'disabled' : ''}">
-                        <span>${w.name} (${w.cost_credits||0}c) ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''}</span>
-                        ${isAvailable ? `<button onclick="addWeapon('${w.id}')">Ajouter</button>` : '<small>Emplacements insuffisants</small>'}
-                    </div>
-                `;
-            });
-        }
+        availableWeapons.forEach(w => {
+            let slotsNeeded = w.name.includes('*') ? 2 : 1;
+            let isAvailable = (usedSlots + slotsNeeded <= 3);
+            html += `
+                <div class="fighter-item ${!isAvailable ? 'disabled' : ''}">
+                    <span>${w.name} (${w.cost_credits||0}c) ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''}</span>
+                    ${isAvailable ? `<button onclick="addWeapon('${w.id}')">${isCampaign ? 'Acheter' : 'Ajouter'}</button>` : '<small>Emplacements insuffisants</small>'}
+                </div>
+            `;
+        });
     }
 
     openModal("Sélection d'Arme", html);
@@ -913,6 +912,7 @@ function addWeaponFromStash(itemName) {
         let foundDbW = db.weapons.find(w => w.name === itemName);
         let newWeapon = foundDbW ? JSON.parse(JSON.stringify(foundDbW)) : { name: itemName, cost_credits: 0 };
         newWeapon.accessory = null;
+        newWeapon.fromStash = true;
         tempFighter.weapons.push(newWeapon);
         saveGangs();
     }
@@ -945,6 +945,7 @@ function openWeaponAccessoryModal(wIdx) {
     let html = `<h3>Sélectionner un accessoire pour l'arme</h3><br>`;
 
     if (isCampaign) {
+        html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash) :</h4>`;
         if (!currentGang.stash) currentGang.stash = [];
         let availableAccs = currentGang.stash.filter(item => {
             let itemType = (typeof item === 'object' && item.type) ? item.type : '';
@@ -952,32 +953,33 @@ function openWeaponAccessoryModal(wIdx) {
         });
 
         if (availableAccs.length === 0) {
-            html += `<p style="color:#888;">Aucun accessoire d'arme dans la réserve du gang.</p>`;
+            html += `<p style="color:#888; font-size:12px; margin-bottom:10px;">Aucun accessoire d'arme dans la réserve.</p>`;
         } else {
             availableAccs.forEach(stItem => {
                 let itemName = typeof stItem === 'string' ? stItem : stItem.name;
                 html += `
                     <div class="fighter-item">
-                        <span><strong>${itemName}</strong></span>
-                        <button class="btn-cyan" onclick="attachAccessoryFromStash('${itemName}')">Équiper depuis Réserve</button>
+                        <span><strong>${itemName}</strong> <small style="color:#2ecc71;">(Réserve - 0 cr)</small></span>
+                        <button class="btn-cyan" onclick="attachAccessoryFromStash('${itemName}')">Équiper (Stash)</button>
                     </div>
                 `;
             });
         }
+        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter un Accessoire de Clan :</h4>`;
+    }
+
+    let accessories = db.equipment.filter(e => e.type === "Accessoire" && e.is_gang === true);
+    if (accessories.length === 0) {
+        html += `<p style="color:#888; font-size:12px;">Aucun accessoire disponible.</p>`;
     } else {
-        let accessories = db.equipment.filter(e => e.type === "Accessoire" && e.is_gang === true);
-        if (accessories.length === 0) {
-            html += `<p>Aucun accessoire disponible.</p>`;
-        } else {
-            accessories.forEach(acc => {
-                html += `
-                    <div class="fighter-item">
-                        <span><strong>${acc.name}</strong> (${acc.cost_credits}c) <br><small>${acc.effect || ''}</small></span>
-                        <button onclick="attachAccessoryToWeapon('${acc.id}')">Équiper</button>
-                    </div>
-                `;
-            });
-        }
+        accessories.forEach(acc => {
+            html += `
+                <div class="fighter-item">
+                    <span><strong>${acc.name}</strong> (${acc.cost_credits}c) <br><small>${acc.effect || ''}</small></span>
+                    <button onclick="attachAccessoryToWeapon('${acc.id}')">${isCampaign ? 'Acheter' : 'Équiper'}</button>
+                </div>
+            `;
+        });
     }
 
     openModal("Accessoire d'arme", html);
@@ -999,7 +1001,9 @@ function attachAccessoryFromStash(accName) {
     if (sIdx >= 0 && currentWeaponIndexForAccessory !== null) {
         currentGang.stash.splice(sIdx, 1);
         let foundDbAcc = db.equipment.find(e => e.name === accName);
-        tempFighter.weapons[currentWeaponIndexForAccessory].accessory = foundDbAcc ? JSON.parse(JSON.stringify(foundDbAcc)) : { name: accName, cost_credits: 0 };
+        let accObj = foundDbAcc ? JSON.parse(JSON.stringify(foundDbAcc)) : { name: accName, cost_credits: 0 };
+        accObj.fromStash = true;
+        tempFighter.weapons[currentWeaponIndexForAccessory].accessory = accObj;
         saveGangs();
     }
     closeModal();
@@ -1025,6 +1029,7 @@ function openEquipSelectModal() {
     let html = ``;
 
     if (isCampaign) {
+        html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash) :</h4>`;
         if (!currentGang.stash) currentGang.stash = [];
         let availableEquip = currentGang.stash.filter(item => {
             let itemType = (typeof item === 'object' && item.type) ? item.type : '';
@@ -1032,33 +1037,34 @@ function openEquipSelectModal() {
         });
 
         if (availableEquip.length === 0) {
-            html = `<p style="color:#888;">Aucune armure ou équipement disponible dans la réserve du gang.</p>`;
+            html += `<p style="color:#888; font-size:12px; margin-bottom:10px;">Aucun équipement disponible dans la réserve.</p>`;
         } else {
             availableEquip.forEach(stItem => {
                 let itemName = typeof stItem === 'string' ? stItem : stItem.name;
                 let itemType = (typeof stItem === 'object' && stItem.type) ? stItem.type : 'Matériel';
                 html += `
                     <div class="fighter-item">
-                        <span><strong>${itemName}</strong> <small style="color:#aaa;">(${itemType})</small></span>
-                        <button class="btn-cyan" onclick="addEquipmentFromStash('${itemName}')">Équiper depuis Réserve</button>
+                        <span><strong>${itemName}</strong> <small style="color:#aaa;">(${itemType})</small> <small style="color:#2ecc71;">(Réserve - 0 cr)</small></span>
+                        <button class="btn-cyan" onclick="addEquipmentFromStash('${itemName}')">Équiper (Stash)</button>
                     </div>
                 `;
             });
         }
+        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter sur la Liste de Clan :</h4>`;
+    }
+
+    let generalEquipments = db.equipment.filter(e => e.type !== "Accessoire" && e.is_gang === true);
+    if (generalEquipments.length === 0) {
+        html += `<p style="color:#888; font-size:12px;">Aucun équipement de clan disponible.</p>`;
     } else {
-        let generalEquipments = db.equipment.filter(e => e.type !== "Accessoire" && e.is_gang === true);
-        if (generalEquipments.length === 0) {
-            html = `<p>Aucun équipement de clan disponible.</p>`;
-        } else {
-            generalEquipments.forEach(e => {
-                html += `
-                    <div class="fighter-item">
-                        <span>${e.name} (${e.cost_credits||0}c) - <small>${e.type}</small></span>
-                        <button onclick="addEquipment('${e.id}')">Équiper</button>
-                    </div>
-                `;
-            });
-        }
+        generalEquipments.forEach(e => {
+            html += `
+                <div class="fighter-item">
+                    <span>${e.name} (${e.cost_credits||0}c) - <small>${e.type}</small></span>
+                    <button onclick="addEquipment('${e.id}')">${isCampaign ? 'Acheter' : 'Équiper'}</button>
+                </div>
+            `;
+        });
     }
 
     openModal("Sélection Armure / Équipement", html);
@@ -1078,7 +1084,9 @@ function addEquipmentFromStash(itemName) {
     if (sIdx >= 0) {
         currentGang.stash.splice(sIdx, 1);
         let foundDbE = db.equipment.find(e => e.name === itemName);
-        tempFighter.equipment.push(foundDbE ? JSON.parse(JSON.stringify(foundDbE)) : { name: itemName, cost_credits: 0 });
+        let newE = foundDbE ? JSON.parse(JSON.stringify(foundDbE)) : { name: itemName, cost_credits: 0 };
+        newE.fromStash = true;
+        tempFighter.equipment.push(newE);
         saveGangs();
     }
     closeModal();
@@ -1223,8 +1231,8 @@ function saveFighter() {
     
     tempFighter.totalCost = calculateFighterCost(tempFighter);
 
-    // En campagne, les équipements sont pris dans le Stash (pas d'impact sur les crédits du gang)
     if (!currentGang.isEstablished) {
+        // En création de gang initiale
         let oldCost = 0;
         if (appState.editTarget !== null) {
             oldCost = currentGang.members[appState.editTarget].totalCost;
@@ -1232,6 +1240,47 @@ function saveFighter() {
         let diff = tempFighter.totalCost - oldCost;
         if (currentGang.credits - diff < 0) return alert("Crédits insuffisants !");
         currentGang.credits -= diff;
+    } else {
+        // En campagne : calcul des crédits à prélever pour les éléments neufs (non issus de la réserve)
+        let creditsToPay = 0;
+
+        if (appState.editTarget === null) {
+            // Recrutement d'un nouveau guerrier
+            const charDef = db.characters.find(c => c.id === tempFighter.charId);
+            creditsToPay += (charDef ? charDef.cost : 0);
+
+            (tempFighter.weapons || []).forEach(w => {
+                if (!w.fromStash) creditsToPay += (w.cost_credits || 0);
+                if (w.accessory && !w.accessory.fromStash) creditsToPay += (w.accessory.cost_credits || 0);
+            });
+            (tempFighter.equipment || []).forEach(e => {
+                if (!e.fromStash) creditsToPay += (e.cost_credits || 0);
+            });
+        } else {
+            // Modification d'un guerrier existant
+            let origFighter = currentGang.members[appState.editTarget];
+            
+            (tempFighter.weapons || []).forEach(w => {
+                let wasOnOrig = (origFighter.weapons || []).some(ow => ow.name === w.name);
+                if (!wasOnOrig && !w.fromStash) creditsToPay += (w.cost_credits || 0);
+                if (w.accessory) {
+                    let wasAccOnOrig = (origFighter.weapons || []).some(ow => ow.accessory && ow.accessory.name === w.accessory.name);
+                    if (!wasAccOnOrig && !w.accessory.fromStash) creditsToPay += (w.accessory.cost_credits || 0);
+                }
+            });
+
+            (tempFighter.equipment || []).forEach(e => {
+                let wasOnOrig = (origFighter.equipment || []).some(oe => oe.name === e.name);
+                if (!wasOnOrig && !e.fromStash) creditsToPay += (e.cost_credits || 0);
+            });
+        }
+
+        if (creditsToPay > 0) {
+            if (currentGang.credits < creditsToPay) {
+                return alert(`Crédits insuffisants ! Requis : ${creditsToPay} cr | Disponibles : ${currentGang.credits} cr.`);
+            }
+            currentGang.credits -= creditsToPay;
+        }
     }
     
     if (appState.editTarget === null) {
@@ -1250,7 +1299,6 @@ function removeFighter(idx) {
     const m = currentGang.members[idx];
 
     if (currentGang.isEstablished) {
-        // En campagne : transfert de tout le matériel vers la réserve (pas de remboursement en crédits)
         if (!currentGang.stash) currentGang.stash = [];
         (m.weapons || []).forEach(w => {
             if (w.accessory) {
@@ -1263,7 +1311,6 @@ function removeFighter(idx) {
         });
         alert(`Les équipements de ${m.customName} ont été remis dans la réserve de gang.`);
     } else {
-        // À la création : remboursement des crédits
         currentGang.credits += m.totalCost;
     }
 
