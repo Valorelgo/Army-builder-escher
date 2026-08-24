@@ -929,19 +929,31 @@ function applyInjury(fighterId) {
         m.xp = getFighterXP(m) + 3;
         alert(`${m.customName} gagne +3 XP !`);
     } else if (selectedInj === "Mort") {
-        if (confirm(`${m.customName} est morte ! Son équipement va être transféré dans la réserve du gang.`)) {
-            if (m.weapons) {
-                m.weapons.forEach(w => {
-                    currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost || 0 });
-                });
+        let isMercenary = (m.charId && m.charId.startsWith('merc_')) || 
+                          (m.type || []).some(t => {
+                              let lower = t.toLowerCase();
+                              return lower.includes('merc') || lower.includes('hired') || lower.includes('bounty');
+                          });
+
+        if (isMercenary) {
+            if (confirm(`${m.customName} (Mercenaire) est mort(e) ! Son équipement disparaît avec lui/elle.`)) {
+                currentGang.members = currentGang.members.filter(x => x.id !== fighterId);
             }
-            if (m.armor) currentGang.stash.push({ name: m.armor.name, type: "Armure", cost: m.armor.cost || 0 });
-            if (m.equipment) {
-                m.equipment.forEach(e => {
-                    currentGang.stash.push({ name: e.name, type: "Équipement", cost: e.cost || 0 });
-                });
+        } else {
+            if (confirm(`${m.customName} est mort(e) ! Son équipement va être transféré dans la réserve du gang.`)) {
+                if (m.weapons) {
+                    m.weapons.forEach(w => {
+                        currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost || 0 });
+                    });
+                }
+                if (m.armor) currentGang.stash.push({ name: m.armor.name, type: "Armure", cost: m.armor.cost || 0 });
+                if (m.equipment) {
+                    m.equipment.forEach(e => {
+                        currentGang.stash.push({ name: e.name, type: "Équipement", cost: e.cost || 0 });
+                    });
+                }
+                currentGang.members = currentGang.members.filter(x => x.id !== fighterId);
             }
-            currentGang.members = currentGang.members.filter(x => x.id !== fighterId);
         }
     } else if (selectedInj.includes("Recovery")) {
         m.recovery = true;
