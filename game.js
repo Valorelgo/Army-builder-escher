@@ -447,6 +447,7 @@ function startGame() {
         m.currentHP = parseInt(m.stats ? m.stats.W : 1) || 1;
         m.status = 'Prêt';
         m.activated = false;
+        m.suppressed = false;
         m.conditions = {};
         
         if (m.weapons) {
@@ -483,30 +484,47 @@ function renderGameView(container) {
     `;
 
     currentGameRoster.forEach((m, idx) => {
-        let statusStyle = '';
-        if (m.status === 'Suppressed') statusStyle = 'color: var(--status-suppressed);';
-        if (m.status === 'Out of action') statusStyle = 'color: var(--status-danger); opacity: 0.6;';
+        let activeConds = Object.keys(m.conditions || {}).filter(c => m.conditions[c]);
+        let isOOA = (m.status === 'Out of action');
+
+        // Hiérarchie des couleurs : Grisé (OOA) > Rouge (Sérieusement blessé) > Orange (Blessé) > Jaune (Pilonné)
+        let nameColor = '#ffffff';
+        if (isOOA) {
+            nameColor = '#777777';
+        } else if (m.status === 'Sérieusement blessé') {
+            nameColor = '#e74c3c'; // Rouge
+        } else if (m.conditions && m.conditions['Blessé']) {
+            nameColor = '#e67e22'; // Orange
+        } else if (m.suppressed || m.status === 'Suppressed') {
+            nameColor = '#f1c40f'; // Jaune
+        }
+
+        let ooaCardStyle = isOOA ? 'background: #141414; opacity: 0.45; filter: grayscale(1); border: 1px solid #333;' : '';
 
         html += `
-            <div class="card" style="margin-bottom:10px; ${statusStyle}">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+            <div class="card" style="margin-bottom:10px; ${ooaCardStyle}">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <div>
-                        <strong style="font-size:16px; cursor:pointer; text-decoration:underline;" onclick="openFighterDetailModal(${idx})">
+                        <strong style="font-size:16px; cursor:pointer; text-decoration:${isOOA ? 'line-through' : 'underline'}; color:${nameColor};" onclick="openFighterDetailModal(${idx})">
                             ${m.customName}
                         </strong> 
-                        <small>(${(m.type || []).join(', ')})</small><br>
-                        <small>Armes : ${(m.weapons || []).map(w => w.name + (w.accessory ? ' ['+w.accessory.name+']' : '')).join(', ') || 'Aucune'}</small>
+                        <small style="color:${isOOA ? '#666' : 'inherit'};">(${(m.type || []).join(', ')})</small><br>
+                        <small style="color:${isOOA ? '#666' : 'inherit'};">Armes : ${(m.weapons || []).map(w => w.name + (w.accessory ? ' ['+w.accessory.name+']' : '')).join(', ') || 'Aucune'}</small>
+                        ${activeConds.length > 0 ? `<br><small style="color:${isOOA ? '#666' : '#e67e22'};"><strong>Conditions :</strong> ${activeConds.join(', ')}</small>` : ''}
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:15px; margin-top:5px;">
+                    <div style="display:flex; align-items:center; gap:15px; margin-top:5px; flex-wrap:wrap;">
                         <div>
                             PV : <strong>${m.currentHP}</strong> / ${m.stats ? m.stats.W : 1}
                         </div>
                         <div>
-                            Statut : <strong>${m.status}</strong>
+                            Statut : <strong style="color:${isOOA ? '#e74c3c' : 'inherit'};">${m.status}</strong>
                         </div>
-                        <div>
-                            <label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <label style="cursor:pointer; font-size:13px;">
+                                <input type="checkbox" ${m.suppressed ? 'checked' : ''} onchange="toggleSuppressed(${idx})"> Pilonné
+                            </label>
+                            <label style="cursor:pointer; font-size:13px;">
                                 <input type="checkbox" ${m.activated ? 'checked' : ''} onchange="toggleActivation(${idx})"> Activé
                             </label>
                         </div>
@@ -530,6 +548,13 @@ function renderGameView(container) {
 function toggleActivation(idx) {
     if (currentGameRoster[idx]) {
         currentGameRoster[idx].activated = !currentGameRoster[idx].activated;
+        renderGameView(document.getElementById('main-content'));
+    }
+}
+
+function toggleSuppressed(idx) {
+    if (currentGameRoster[idx]) {
+        currentGameRoster[idx].suppressed = !currentGameRoster[idx].suppressed;
         renderGameView(document.getElementById('main-content'));
     }
 }
@@ -641,7 +666,6 @@ function openFighterDetailModal(idx) {
                         <option value="Prêt" ${m.status === 'Prêt' ? 'selected' : ''}>Prêt</option>
                         <option value="Engagé" ${m.status === 'Engagé' ? 'selected' : ''}>Engagé</option>
                         <option value="Sérieusement blessé" ${m.status === 'Sérieusement blessé' ? 'selected' : ''}>Sérieusement blessé</option>
-                        <option value="Suppressed" ${m.status === 'Suppressed' ? 'selected' : ''}>Suppressed</option>
                         <option value="Out of action" ${m.status === 'Out of action' ? 'selected' : ''}>Out of action</option>
                     </select>
                 </div>
@@ -772,6 +796,7 @@ function toggleCondition(fIdx, cond) {
         let m = currentGameRoster[fIdx];
         if (!m.conditions) m.conditions = {};
         m.conditions[cond] = !m.conditions[cond];
+        renderGameView(document.getElementById('main-content'));
     }
 }
 
@@ -1828,7 +1853,7 @@ function toggleFighterSkill(fighterId, skillName, add) {
     if (!m.skills) m.skills = [];
 
     if (add) {
-        if (!m.skills.some(s => (typeof s === 'string' ? s : s.name) === skillName)) {
+        if (!m.skills.some(s => (typeof s === 'string' ? s : s.name) !== skillName)) {
             let foundObj = null;
             if (typeof db !== 'undefined' && db.skills) {
                 for (let cat in db.skills) {
