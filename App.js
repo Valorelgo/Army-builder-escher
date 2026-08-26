@@ -392,7 +392,7 @@ const db = {
         { id: "eq_servo_partiel", name: "Servo-harnais partiel", type: "Personnel", cost_credits: 100, cost_tp: 2, effect: "+2 Force, +1 Endo. Malus -1 Mvt et Init." },
         { id: "eq_servo_total", name: "Servo-harnais total", type: "Personnel", cost_credits: 130, cost_tp: 3, effect: "Idem partiel sans malus. Incompatible servo-griffe." },
         { id: "eq_dirt_bike", name: "Dirt bike", type: "Personnel", cost_credits: 35, cost_tp: 0, effect: "Devient monté. M = 8\", Dash = 5\".", is_gang: true },
-        { id: "eq_escher_cutter", name: "Escher cutter", type: "Personnel", cost_credits: 150, cost_tp: 0, effect: "Monté. M = 9\", Dash = 5\". Armé d'un cutter grenade launcher de base." },
+        { id: "eq_escher_cutter", name: "Escher cutter", type: "Personnel", cost_credits: 150, cost_tp: 0, effect: "Monté. M = 9\", Dash = 5\". Armé d'un cutter grenade launcher de base.", is_gang: true },
         
         { id: "eq_medicrane", name: "Medicrane", type: "Personnel", cost_credits: 0, effect: "Figurine à 1\", T3 Sv6+. Soigne en action gratuite.", specific_to: "merc_rogue_doc" },
         
