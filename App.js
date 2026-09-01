@@ -130,34 +130,55 @@ const db = {
             id: "merc_luthern_armbot", name: "Luthern armbot",
             stats: { M: '4"', WS: '3+', BS: '5+', S: 5, T: 5, W: 3, I: 2, A: 2, Sv: '4+', Ld: 6, Cl: 8, Wil: 6, Int: 5 },
             type: ["Guerrier", "brute"], starting_xp: 25, starting_skill: "Infiltration", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 230,
-            special_rules: ["Post cycle : travailler sur territoires possédés."], default_weapons: ["wpn_griffes_tunnel"]
+            special_rules: ["Post cycle : travailler sur territoires possédés."], default_weapons: ["wpn_griffes_tunnel"],
+            allowed_merc_weapons: [
+                { id: "wpn_armbot_grav", cost_credits: 40 },
+                { id: "wpn_armbot_melta", cost_credits: 70 }
+            ]
         },
         {
             id: "merc_jotunn_ogryn", name: "Jotunn Ogryn",
             stats: { M: '5"', WS: '4+', BS: '5+', S: 5, T: 5, W: 3, I: 3, A: 2, Sv: '5+', Ld: 7, Cl: 8, Wil: 6, Int: 5 },
             type: ["Guerrier", "brute"], starting_xp: 25, starting_skill: "coup de boule", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 160,
-            special_rules: ["Ne peut jamais être activé en activation de groupe."], default_weapons: ["wpn_poing_augmetic", "wpn_poing_augmetic"]
+            special_rules: ["Ne peut jamais être activé en activation de groupe."], default_weapons: ["wpn_poing_augmetic", "wpn_poing_augmetic"],
+            allowed_merc_weapons: [
+                { id: "wpn_arc_welder", cost_credits: 70, replaces: "wpn_poing_augmetic" },
+                { id: "wpn_storm_welder", cost_credits: 70, replaces: "wpn_poing_augmetic" },
+                { id: "wpn_spud_jacker", cost_credits: 20, replaces: "wpn_poing_augmetic" }
+            ]
         },
         {
             id: "merc_rogue_doc", name: "Rogue doc",
             stats: { M: '5"', WS: '5+', BS: '5+', S: 2, T: 3, W: 1, I: 3, A: 1, Sv: '6+', Ld: 6, Cl: 8, Wil: 6, Int: 7 },
             type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "soin", primary_skills: ["Savant"], secondary_skills: ["Agilité"], cost: 90,
             special_rules: ["Peut accompagner un guerrier en escorte médicale ou mise en place de bioniques."],
-            default_weapons: ["wpn_stub_gun"], default_equipment: ["eq_kit_medical", "eq_medicrane"]
+            default_weapons: ["wpn_stub_gun"], default_equipment: ["eq_kit_medical", "eq_medicrane"],
+            allowed_merc_weapons: [
+                { id: "wpn_laspistol", cost_credits: 5, replaces: "wpn_stub_gun" }
+            ]
         },
         {
             id: "merc_ammo_jack", name: "Ammo-jack",
             stats: { M: '5"', WS: '4+', BS: '3+', S: 3, T: 3, W: 1, I: 2, A: 1, Sv: '5+', Ld: 6, Cl: 7, Wil: 7, Int: 7 },
             type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "Munitions", primary_skills: ["Tir"], secondary_skills: ["Savant"], cost: 100,
             special_rules: ["Post cycle overcharge : Une arme gagne +1 S et instable."],
-            default_weapons: ["wpn_epee_energetique", "wpn_pompe_combat"]
+            default_weapons: ["wpn_epee_energetique", "wpn_pompe_combat"],
+            allowed_merc_weapons: [
+                { id: "wpn_boltgun", cost_credits: 15, replaces: "wpn_pompe_combat" },
+                { id: "wpn_marteau_nrj", cost_credits: 0, replaces: "wpn_epee_energetique" }
+            ]
         },
         {
             id: "merc_dome_runner", name: "Dome runner",
             stats: { M: '5"', WS: '5+', BS: '5+', S: 3, T: 3, W: 1, I: 4, A: 1, Sv: '6+', Ld: 6, Cl: 7, Wil: 7, Int: 7 },
             type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "chute de chat et grimper", primary_skills: ["Agilité"], secondary_skills: ["Ruse"], cost: 50,
             special_rules: ["Déploiement : D3 alliés peuvent se déplacer de leur initiative avant T1."],
-            default_weapons: ["wpn_stub_gun", "wpn_couteau_combat"]
+            default_weapons: ["wpn_stub_gun", "wpn_couteau_combat"],
+            allowed_merc_weapons: [
+                { id: "wpn_laspistol", cost_credits: 0, replaces: "wpn_stub_gun" },
+                { id: "wpn_long_las", cost_credits: 35, replaces: "wpn_stub_gun" },
+                { id: "wpn_hache", cost_credits: 15, replaces: "wpn_couteau_combat" }
+            ]
         },
         {
             id: "merc_slopper", name: "Slopper",
@@ -346,32 +367,32 @@ const db = {
             { name: "Frag grenades", SR: '6"', LR: '24"', S: 3, AP: "-", L: 1, traits: "tir rapide (1), munitions (4+), explosion (3\"), knockback (5+), arc (ligne centrale)" },
             { name: "krak grenades", SR: '6"', LR: '24"', S: 6, AP: "-2", L: 1, traits: "tir rapide (1), munitions (4), arc (ligne centrale)" }
         ], cost_credits: 0, is_gang_weapon: true, requires_equip: "eq_escher_cutter", note: "inclus dans escher cutter" },
-        { id: "wpn_chemical_cloud", name: "Chemical cloud breath", profiles: [{ name: "Unique", SR: '6"', LR: '12"', S: 3, AP: "-1", L: 1, traits: "Munitions (4+), explosion (3\")" }], is_gang_weapon: true, default_for: "char_khimerix" },
+        { id: "wpn_chemical_cloud", name: "Chemical cloud breath", profiles: [{ name: "Unique", SR: '6"', LR: '12"', S: 3, AP: "-1", L: 1, traits: "Munitions (4+), explosion (3\")" }], default_for: "char_khimerix" },
         { id: "wpn_gaseous_eruption", name: "Gaseous eruption breath", profiles: [{ name: "Unique", SR: "T", LR: "-", S: "-", AP: "-", L: 1, traits: "Munitions (6+), toxine (3+), gabarit" }], cost_credits: 25, is_gang_weapon: true, upgrades_from: "wpn_chemical_cloud", specific_to: "char_khimerix" },
         { id: "wpn_cutter_plasma_guns", name: "Cutter plasma guns", profiles: [{ name: "Unique", SR: '12"', LR: '24"', S: 5, AP: "-2", L: 2, traits: "Munitions (6+), Dommages (2), tir rapide (1), jumelé, instable, arc (ligne centrale)" }], cost_credits: 15, is_gang_weapon: true, requires_equip: "eq_escher_cutter" },
         { id: "wpn_wyld_bow", name: "Wyld bow", profiles: [{ name: "Unique", SR: '9"', LR: '18"', S: 3, AP: "-", L: 1, traits: "assaut" }], cost_credits: 15, cost_tp: 0, is_gang_weapon: true, specific_to: "char_wyld_runner" },
         { id: "wpn_nightshade", name: "Nightshade chem-thrower", profiles: [{ name: "Unique", SR: "T", LR: "-", S: "-", AP: "-", L: 1, traits: "Munitions (6+), toxine (3+), gaz, gabarit" }], cost_credits: 95, cost_tp: 0, is_gang_weapon: true },
-        { id: "wpn_claws_cat", name: "Claws", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "-", AP: "-", L: 1, traits: "Melee, Toxine (3+)" }], is_gang_weapon: true, default_for: "char_phelynx" },
+        { id: "wpn_claws_cat", name: "Claws", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "-", AP: "-", L: 1, traits: "Melee, Toxine (3+)" }], default_for: "char_phelynx" },
         { id: "wpn_razor_talons", name: "Razor-sharp talons", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 3, traits: "Melee, déchirant (6+)" }], cost_credits: 25, is_gang_weapon: true, upgrades_from: "wpn_talons", specific_to: "char_khimerix" },
-        { id: "wpn_talons", name: "Talons (Khimerix)", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 2, traits: "Melee" }], is_gang_weapon: true, default_for: "char_khimerix" },
-        { id: "wpn_talons_cat", name: "Talons (Phyrr Cat)", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 2, traits: "Melee" }], is_gang_weapon: true, default_for: "char_phyrr_cat" },
+        { id: "wpn_talons", name: "Talons (Khimerix)", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 2, traits: "Melee" }], default_for: "char_khimerix" },
+        { id: "wpn_talons_cat", name: "Talons (Phyrr Cat)", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 2, traits: "Melee" }], default_for: "char_phyrr_cat" },
         { id: "wpn_fouet", name: "Fouet", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 1, traits: "Melee, Knockback (6+)" }], cost_credits: 5, cost_tp: 0, is_gang_weapon: true, specific_to: "char_wyld_runner" },
         { id: "wpn_venom_claw", name: "Venom claw", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "-", AP: "-2", L: 1, traits: "Melee, Toxine (3+), déchiqueter (5+)" }], cost_credits: 50, cost_tp: 0, is_gang_weapon: true, specific_to: "char_death_maiden" },
         
         // Armes Mercenaires
-        { id: "wpn_armbot_grav", name: "Armbot grav cutter", profiles: [{ name: "Unique", SR: '6"', LR: '12"', S: "-", AP: "-", L: 2, traits: "Explosion (3\"), graviton pulse" }], is_merc_weapon: true },
-        { id: "wpn_armbot_melta", name: "Armbot melta cutter", profiles: [{ name: "Unique", SR: '4"', LR: '8"', S: 6, AP: "-2", L: 2, traits: "Munitions (6+) dommages (2)" }], is_merc_weapon: true },
-        { id: "wpn_storm_welder", name: "Storm Welder", profiles: [{ name: "Unique", SR: '8"', LR: '16"', S: 5, AP: "-", L: 1, traits: "Tir rapide (3), shock (6+), Instable" }], is_merc_weapon: true },
-        { id: "wpn_poing_augmetic", name: "Poing augmetic", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 1, traits: "melee, knockback (6+)" }], is_merc_weapon: true },
+        { id: "wpn_armbot_grav", name: "Armbot grav cutter", profiles: [{ name: "Unique", SR: '6"', LR: '12"', S: "-", AP: "-", L: 2, traits: "Explosion (3\"), graviton pulse" }], is_merc_weapon: true, cost_credits: 40 },
+        { id: "wpn_armbot_melta", name: "Armbot melta cutter", profiles: [{ name: "Unique", SR: '4"', LR: '8"', S: 6, AP: "-2", L: 2, traits: "Munitions (6+) dommages (2)" }], is_merc_weapon: true, cost_credits: 70 },
+        { id: "wpn_storm_welder", name: "Storm Welder", profiles: [{ name: "Unique", SR: '8"', LR: '16"', S: 5, AP: "-", L: 1, traits: "Tir rapide (3), shock (6+), Instable" }], is_merc_weapon: true, cost_credits: 70 },
+        { id: "wpn_poing_augmetic", name: "Poing augmetic", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 1, traits: "melee, knockback (6+)" }], is_merc_weapon: true, cost_credits: 0 },
         { id: "wpn_morsure", name: "Morsure", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 1, traits: "Melee" }], is_merc_weapon: true },
         { id: "wpn_gueule_crocs", name: "Gueule à crocs", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "-", AP: "-", L: 1, traits: "melee, toxine (4+)" }], is_merc_weapon: true },
         { id: "wpn_dents", name: "Dents", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 2, traits: "Melee" }], is_merc_weapon: true },
-        { id: "wpn_arc_welder", name: "Arc welder", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S+2", AP: "-3", L: 2, traits: "Melee, flammes (5+)" }], is_merc_weapon: true },
+        { id: "wpn_arc_welder", name: "Arc welder", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S+2", AP: "-3", L: 2, traits: "Melee, flammes (5+)" }], is_merc_weapon: true, cost_credits: 70 },
         { id: "wpn_griffes_tunnel", name: "Griffes de tunnel", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S-1", AP: "-", L: 2, traits: "Melee, paire (2)" }], is_merc_weapon: true },
-        { id: "wpn_spud_jacker", name: "Spud jacker", profiles: [{ name: "Unique", SR: "E", LR: "+", S: "S+1", AP: "-", L: 1, traits: "melee, knockback (6+), commotion (6+)" }], is_merc_weapon: true }
+        { id: "wpn_spud_jacker", name: "Spud jacker", profiles: [{ name: "Unique", SR: "E", LR: "+", S: "S+1", AP: "-", L: 1, traits: "melee, knockback (6+), commotion (6+)" }], is_merc_weapon: true, cost_credits: 20 }
     ],
 
-    // ===== EQUIPEMENTS (Armures, Perso, Accessoires) =====
+    // ===== EQUIPEMENTS =====
     equipment: [
         { id: "eq_armure_cara_leg", name: "Armure carapace légère", type: "Armure", cost_credits: 100, cost_tp: 1, effect: "Améliore la sauvegarde de 1. Réduit l'initative de 1." },
         { id: "eq_armure_cara_lourde", name: "Armure carapace lourde", type: "Armure", cost_credits: 140, cost_tp: 3, effect: "Améliore la sauvegarde de 2. Réduit l'initiative de 2. Malus aux jets d'agilité de -1." },
@@ -498,7 +519,19 @@ const db = {
         { id: "ter_synth_still", name: "Synth still", income: 20, desc: "Revenu : 20 crédits." },
         { id: "ter_old_ruins", name: "Old ruins", income: 20, desc: "Revenu : 20 crédits." },
         { id: "ter_fighting_pit", name: "Fighting pit", income: 25, desc: "Revenu : 25 crédits." }
-    ]
+    ],
+
+    // ===== CONDITIONS =====
+    conditions: {
+        "Redoutable": "Losqu'il est pris pour cible d'une attaque de corps à corps, l'attaquant fait un jet de Wil. En cas d'échec, sa WS passe à 6+. Les guerriers fearsome ne sont pas affectés, sauf si la cible est terrifying",
+        "Frénésie": "Le guerrier doit déclarer une charge s'il commence son activation à son M + 6\" d'un ennemi. Il devrai charger l'ennemi le plus proche. Ils gagnent +1A",
+        "Haine": "Quand le guerrier engage, charge ou est la cible des ces actions par une figurine haïe, elle peut relancer les jets pour toucher ratés.",
+        "Blessé": "Le guerrier perd toutes ses compétences jusqu'à ce qu'il récupère un point de vie",
+        "Intoxiqué": "Le guerrier baisse de 1 ses WS et BS, mais augmente son cool de 1",
+        "Terrifiant": "A les mêmes avantages qu'un guerrier fearsome. De plus, pour charger ou engager ce guerrier, il faut réussir un test Will. En cas d'échec, l'attaquant reste sur place. Ce guerrier n'est affecté ni par fearsome, ni par terrifying.",
+        "Entoilé": "Le guerrier ne peut plus sé déplacer, ni être déplacé et il subit un -1 à tous ses jets pour toucher. A la fon de son activation, il peut faire un test de force qui le libère de la condition s'il est réussi.",
+        "Folie": "Quand un guerrier atteint de folie s'active, jeter un dé sur le tableau de folie pour voir comment il va agir. A la fin de son activation, il faut faire un jet de Will sui s'il est réussi, annule la condition folie"
+    }
 };
 
 // ==========================================
@@ -517,20 +550,31 @@ function generateId() {
     return Math.random().toString(36).substr(2, 9);
 }
 
+function isMercOrBeastProfile(fighter) {
+    let types = (fighter.type || []).map(t => t.toLowerCase());
+    return types.includes("bête") || types.includes("bette") || types.includes("hanger-on") || (fighter.charId && fighter.charId.startsWith("merc_") && fighter.charId !== "merc_hive_scum");
+}
+
 function calculateFighterCost(m) {
     const char = db.characters.find(c => c.id === m.charId);
     if (!char) return 0;
     let total = char.cost;
     
-    m.weapons.forEach(w => {
-        total += (w.cost_credits || 0);
-        if (w.accessory) {
+    (m.weapons || []).forEach(w => {
+        const isDefault = w.isDefault || (char.default_weapons && (char.default_weapons.includes(w.id) || char.default_weapons.includes(w.name)));
+        if (!isDefault) {
+            total += (w.cost_credits || 0);
+        }
+        if (w.accessory && !w.accessory.isDefault) {
             total += (w.accessory.cost_credits || 0);
         }
     });
     
-    m.equipment.forEach(e => {
-        total += (e.cost_credits || 0);
+    (m.equipment || []).forEach(e => {
+        const isDefault = e.isDefault || (char.default_equipment && (char.default_equipment.includes(e.id) || char.default_equipment.includes(e.name)));
+        if (!isDefault) {
+            total += (e.cost_credits || 0);
+        }
     });
     
     return total;
@@ -655,10 +699,6 @@ function loadGang(name) {
 // ==========================================
 // GESTION ET AFFICHAGE DU GANG
 // ==========================================
-
-
-// 1. Vue de gestion avec le tableau de caractéristiques
-// 2. Vue de gestion avec le tableau de caractéristiques (lecture seule)
 function renderGangManage(container) {
     calculateGangRating(currentGang);
     updateTopBar();
@@ -700,7 +740,6 @@ function renderGangManage(container) {
                     </div>
                 </div>
 
-                <!-- TABLEAU DES CARACTÉRISTIQUES (LECTURE SEULE) -->
                 <div style="overflow-x:auto; background:#111; padding:8px; border-radius:4px; border:1px solid #333;">
                     <div style="display:flex; justify-content:space-between; gap:4px; text-align:center; min-width:600px;">
                         ${statKeys.map(key => `
@@ -716,7 +755,9 @@ function renderGangManage(container) {
     }
     html += `</div>`;
     container.innerHTML = html;
-}function finishGangCreation() {
+}
+
+function finishGangCreation() {
     if (confirm("Valider la liste initiale et passer en mode Gestion de Gang (Campagne) ?")) {
         currentGang.isEstablished = true;
         saveGangs();
@@ -730,12 +771,11 @@ function renderGangManage(container) {
 function openRecruitModal() {
     let html = `<h3>Sélectionner le profil à recruter</h3>`;
     
-    // RESTRICTION 2 : Masquer les mercenaires lors de la création de départ
     const showMercs = currentGang && currentGang.isEstablished;
 
     db.characters.forEach(c => {
         const isMerc = c.id.startsWith("merc_");
-        if (isMerc && !showMercs) return; // Ne pas afficher les mercenaires au départ
+        if (isMerc && !showMercs) return;
 
         html += `
             <div class="fighter-item">
@@ -767,6 +807,30 @@ function selectRecruitProfile(charId) {
         }
     }
 
+    let initWeapons = [];
+    if (char.default_weapons) {
+        char.default_weapons.forEach(wId => {
+            let wObj = db.weapons.find(w => w.id === wId || w.name === wId);
+            if (wObj) {
+                let item = JSON.parse(JSON.stringify(wObj));
+                item.isDefault = true;
+                initWeapons.push(item);
+            }
+        });
+    }
+
+    let initEquip = [];
+    if (char.default_equipment) {
+        char.default_equipment.forEach(eId => {
+            let eObj = db.equipment.find(e => e.id === eId || e.name === eId);
+            if (eObj) {
+                let item = JSON.parse(JSON.stringify(eObj));
+                item.isDefault = true;
+                initEquip.push(item);
+            }
+        });
+    }
+
     tempFighter = {
         id: generateId(),
         charId: char.id,
@@ -774,8 +838,8 @@ function selectRecruitProfile(charId) {
         customName: "",
         type: char.type,
         stats: JSON.parse(JSON.stringify(char.stats)),
-        weapons: [],
-        equipment: [],
+        weapons: initWeapons,
+        equipment: initEquip,
         skills: initSkills,
         totalCost: char.cost
     };
@@ -793,40 +857,53 @@ function renderFighterEdit(container) {
     const m = tempFighter;
     m.totalCost = calculateFighterCost(m);
 
+    let types = (m.type || []).map(t => t.toLowerCase());
+    let isBeast = types.includes("bête") || types.includes("bette");
+    let isMerc = m.charId && m.charId.startsWith("merc_");
+    let isHiveScum = m.charId === "merc_hive_scum";
+
     let html = `
         <div class="card">
             <h2>${appState.editTarget === null ? 'Recruter' : 'Modifier'} ${m.charName}</h2>
             <label>Nom personnalisable :</label>
             <input type="text" value="${m.customName}" placeholder="Ex: Roxie Speed" oninput="tempFighter.customName = this.value">
             
-            <h3>Armes Équipées (Max 3 emplacements)</h3>
+            <h3>Armes Équipées</h3>
             <div id="weapon-list">
                 ${m.weapons.length === 0 ? '<p>Aucune arme.</p>' : m.weapons.map((w, i) => `
                     <div style="margin:8px 0; background:#181818; padding:8px; border-radius:4px;">
                         • <strong>${w.name}</strong> (${w.cost_credits||0}c)
-                        ${w.accessory ? `<br><small style="color:var(--accent-cyan); margin-left:15px;">↳ Accessoire : ${w.accessory.name} (${w.accessory.cost_credits}c) <button class="btn-danger" style="padding:2px 6px; font-size:10px;" onclick="removeWeaponAccessory(${i})">Retirer accessoire</button></small>` : `<br><button style="padding:2px 6px; font-size:11px; margin-left:15px;" onclick="openWeaponAccessoryModal(${i})">+ Ajouter un accessoire</button>`}
+                        ${w.accessory ? `<br><small style="color:var(--accent-cyan); margin-left:15px;">↳ Accessoire : ${w.accessory.name} (${w.accessory.cost_credits}c) ${!isBeast && (!isMerc || isHiveScum) ? `<button class="btn-danger" style="padding:2px 6px; font-size:10px;" onclick="removeWeaponAccessory(${i})">Retirer accessoire</button>` : ''}</small>` : (!isBeast && (!isMerc || isHiveScum) ? `<br><button style="padding:2px 6px; font-size:11px; margin-left:15px;" onclick="openWeaponAccessoryModal(${i})">+ Ajouter un accessoire</button>` : '')}
                         <button class="btn-danger" style="float:right; padding:2px 6px; font-size:11px;" onclick="removeWeapon(${i})">Supprimer l'arme</button>
                         <div style="clear:both;"></div>
                     </div>
                 `).join('')}
             </div>
-            <button onclick="openWeaponSelectModal()">+ Ajouter une Arme</button>
+            <button onclick="openWeaponSelectModal()">+ Ajouter / Échanger une Arme</button>
 
-            <h3 style="margin-top:15px;">Armures & Équipements (Hors accessoires d'armes)</h3>
+            <h3 style="margin-top:15px;">Armures & Équipements</h3>
             <div id="equip-list">
                 ${m.equipment.length === 0 ? '<p>Aucun équipement.</p>' : m.equipment.map((e, i) => `
                     <div style="margin:5px 0;">• ${e.name} (${e.cost_credits||0}c) <button class="btn-danger" onclick="removeEquipment(${i})">X</button></div>
                 `).join('')}
             </div>
             <button onclick="openEquipSelectModal()">+ Ajouter Armure / Équipement</button>
+    `;
 
+    if (isHiveScum) {
+        html += `<p style="color:var(--accent-purple); font-size:12px; margin-top:5px;">💡 Hive Scum : peut sélectionner uniquement le matériel compatible Hive Scum (60 cr max au total).</p>`;
+    } else if (isBeast || isMerc) {
+        html += `<p style="color:#aaa; font-size:12px; margin-top:5px;">💡 Les options proposées sont strictly filtrées selon les spécificités de ce profil.</p>`;
+    }
+
+    html += `
             <h3 style="margin-top:15px;">Compétences</h3>
             <div id="skills-list">
                 ${m.skills.length === 0 ? '<p>Aucune compétence sélectionnée.</p>' : m.skills.map((s, i) => `
-                    <div style="margin:5px 0;">• ${s.name} <button class="btn-danger" onclick="removeSkill(${i})">X</button></div>
+                    <div style="margin:5px 0;">• ${s.name} ${!isBeast && !isMerc ? `<button class="btn-danger" onclick="removeSkill(${i})">X</button>` : ''}</div>
                 `).join('')}
             </div>
-            <button onclick="openSkillModal()">Gérer les Compétences</button>
+            ${!isBeast && !isMerc ? `<button onclick="openSkillModal()">Gérer les Compétences</button>` : ''}
 
             <hr style="margin:20px 0; border-color:var(--border-color);">
             <p><strong>Coût Total du Combattant : ${m.totalCost} crédits</strong></p>
@@ -837,7 +914,6 @@ function renderFighterEdit(container) {
     container.innerHTML = html;
 }
 
-// RESTRICTION 1 : Uniquement les armes de clan (is_gang_weapon === true)
 // ==========================================
 // SELECTION ET GESTION DES ARMES
 // ==========================================
@@ -846,8 +922,11 @@ function openWeaponSelectModal() {
     let html = `<p>Emplacements utilisés : ${usedSlots} / 3</p><br>`;
 
     const isCampaign = currentGang && currentGang.isEstablished;
+    let isMercOrBeast = isMercOrBeastProfile(tempFighter);
+    let isHiveScum = tempFighter.charId === "merc_hive_scum";
+    const charDef = db.characters.find(c => c.id === tempFighter.charId);
 
-    if (isCampaign) {
+    if (isCampaign && !isHiveScum && !isMercOrBeast) {
         html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash) :</h4>`;
         if (!currentGang.stash) currentGang.stash = [];
 
@@ -875,29 +954,129 @@ function openWeaponSelectModal() {
         html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter sur la Liste de Clan :</h4>`;
     }
 
-    const availableWeapons = db.weapons.filter(w => w.is_gang_weapon === true && !w.is_merc_weapon);
-    if (availableWeapons.length === 0) {
-        html += `<p style="color:#888; font-size:12px;">Aucune arme de clan disponible.</p>`;
-    } else {
-        availableWeapons.forEach(w => {
-            let slotsNeeded = w.name.includes('*') ? 2 : 1;
-            let isAvailable = (usedSlots + slotsNeeded <= 3);
-            html += `
-                <div class="fighter-item ${!isAvailable ? 'disabled' : ''}">
-                    <span>${w.name} (${w.cost_credits||0}c) ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''}</span>
-                    ${isAvailable ? `<button onclick="addWeapon('${w.id}')">${isCampaign ? 'Acheter' : 'Ajouter'}</button>` : '<small>Emplacements insuffisants</small>'}
-                </div>
-            `;
+    if (charDef && charDef.allowed_merc_weapons) {
+        html += `<h4 style="color:var(--accent-purple);">Options Mercenaire / Échanges d'armes :</h4>`;
+        let count = 0;
+        charDef.allowed_merc_weapons.forEach(opt => {
+            let wObj = db.weapons.find(w => w.id === opt.id || w.name === opt.id);
+            if (!wObj) return;
+
+            let cost = opt.cost_credits !== undefined ? opt.cost_credits : (wObj.cost_credits || 0);
+
+            if (opt.replaces) {
+                let replaceWpn = db.weapons.find(w => w.id === opt.replaces || w.name === opt.replaces);
+                let replaceName = replaceWpn ? replaceWpn.name : opt.replaces;
+
+                let hasWeaponToReplace = tempFighter.weapons.some(w => w.id === opt.replaces || w.name === replaceName);
+
+                if (hasWeaponToReplace) {
+                    count++;
+                    html += `
+                        <div class="fighter-item">
+                            <span>Échanger <strong>${replaceName}</strong> ➔ <strong>${wObj.name}</strong> (${cost}c)</span>
+                            <button onclick="swapMercWeapon('${opt.id}', '${opt.replaces}', ${cost})">Échanger</button>
+                        </div>
+                    `;
+                }
+            } else {
+                let slotsNeeded = wObj.name.includes('*') ? 2 : 1;
+                let isAvailable = (usedSlots + slotsNeeded <= 3);
+                count++;
+                html += `
+                    <div class="fighter-item ${!isAvailable ? 'disabled' : ''}">
+                        <span>Ajouter <strong>${wObj.name}</strong> (${cost}c) ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''}</span>
+                        ${isAvailable ? `<button onclick="addMercWeapon('${opt.id}', ${cost})">${isCampaign ? 'Acheter' : 'Ajouter'}</button>` : '<small>Emplacements insuffisants</small>'}
+                    </div>
+                `;
+            }
         });
+
+        if (count === 0) {
+            html += `<p style="color:#888; font-size:12px;">Toutes les options disponibles pour ce mercenaire ont déjà été appliquées ou ne sont plus disponibles.</p>`;
+        }
+    } else {
+        const availableWeapons = db.weapons.filter(w => {
+            if (w.requires_equip) {
+                let hasReq = tempFighter.equipment.some(e => e.id === w.requires_equip || e.name === w.requires_equip);
+                if (!hasReq) return false;
+            }
+
+            if (isMercOrBeast) return w.specific_to === tempFighter.charId;
+            if (isHiveScum) return w.is_hive_scum === true;
+            if (w.is_merc_weapon) return false;
+            if (w.default_for) return false;
+            if (w.specific_to && w.specific_to !== tempFighter.charId) return false;
+
+            let isAllowedExclusive = charDef && charDef.allowed_weapons_exclusive && charDef.allowed_weapons_exclusive.includes(w.id);
+            return w.is_gang_weapon === true || w.specific_to === tempFighter.charId || isAllowedExclusive;
+        });
+
+        if (availableWeapons.length === 0) {
+            html += `<p style="color:#888; font-size:12px;">Aucune arme ou amélioration disponible pour ce combattant.</p>`;
+        } else {
+            availableWeapons.forEach(w => {
+                let slotsNeeded = w.name.includes('*') ? 2 : 1;
+                let isAvailable = (usedSlots + slotsNeeded <= 3);
+                html += `
+                    <div class="fighter-item ${!isAvailable ? 'disabled' : ''}">
+                        <span>${w.name} (${w.cost_credits||0}c) ${slotsNeeded === 2 ? '<em>(2 emplacements)</em>' : ''}</span>
+                        ${isAvailable ? `<button onclick="addWeapon('${w.id}')">${isCampaign ? 'Acheter' : 'Ajouter'}</button>` : '<small>Emplacements insuffisants</small>'}
+                    </div>
+                `;
+            });
+        }
     }
 
-    openModal("Sélection d'Arme", html);
+    openModal("Sélection d'Arme / Option", html);
+}
+
+function swapMercWeapon(newWpnId, replaceWpnId, cost) {
+    let repIdx = tempFighter.weapons.findIndex(w => w.id === replaceWpnId || w.name === replaceWpnId);
+    if (repIdx >= 0) {
+        tempFighter.weapons.splice(repIdx, 1);
+    }
+
+    let wObj = db.weapons.find(w => w.id === newWpnId || w.name === newWpnId);
+    if (wObj) {
+        let item = JSON.parse(JSON.stringify(wObj));
+        item.cost_credits = cost;
+        item.isDefault = false;
+        item.replaces = replaceWpnId;
+        tempFighter.weapons.push(item);
+    }
+
+    closeModal();
+    renderFighterEdit(document.getElementById('main-content'));
+}
+
+function addMercWeapon(wId, cost) {
+    let wObj = db.weapons.find(w => w.id === wId || w.name === wId);
+    if (wObj) {
+        let item = JSON.parse(JSON.stringify(wObj));
+        item.cost_credits = cost;
+        item.isDefault = false;
+        tempFighter.weapons.push(item);
+    }
+    closeModal();
+    renderFighterEdit(document.getElementById('main-content'));
 }
 
 function addWeapon(wId) {
     const w = db.weapons.find(item => item.id === wId);
     let newWeapon = JSON.parse(JSON.stringify(w));
     newWeapon.accessory = null;
+
+    if (w.requires_equip === "eq_escher_cutter") {
+        tempFighter.weapons = tempFighter.weapons.filter(existing => existing.requires_equip !== "eq_escher_cutter");
+    }
+
+    if (w.upgrades_from) {
+        tempFighter.weapons = tempFighter.weapons.filter(existing => {
+            let dbWeapon = db.weapons.find(dw => dw.name === existing.name || dw.id === existing.id);
+            return !(dbWeapon && (dbWeapon.id === w.upgrades_from || dbWeapon.name === w.upgrades_from));
+        });
+    }
+
     tempFighter.weapons.push(newWeapon);
     closeModal();
     renderFighterEdit(document.getElementById('main-content'));
@@ -922,102 +1101,42 @@ function addWeaponFromStash(itemName) {
 
 function removeWeapon(idx) {
     let w = tempFighter.weapons[idx];
-    if (currentGang && currentGang.isEstablished) {
+    const charDef = db.characters.find(c => c.id === tempFighter.charId);
+    const isMercOrBeast = isMercOrBeastProfile(tempFighter);
+    const isDefault = w.isDefault || (charDef && charDef.default_weapons && (charDef.default_weapons.includes(w.id) || charDef.default_weapons.includes(w.name)));
+    const isCutterWpn = w.requires_equip === "eq_escher_cutter";
+
+    if (currentGang && currentGang.isEstablished && !isDefault && !isMercOrBeast && !isCutterWpn) {
         if (!currentGang.stash) currentGang.stash = [];
-        if (w.accessory) {
+        if (w.accessory && !w.accessory.isDefault) {
             currentGang.stash.push({ name: w.accessory.name, type: "Accessoire", cost: w.accessory.cost_credits || 0 });
         }
         currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost_credits || 0 });
         saveGangs();
     }
-    tempFighter.weapons.splice(idx, 1);
-    renderFighterEdit(document.getElementById('main-content'));
-}
 
-// ==========================================
-// SELECTION ET GESTION DES ACCESSOIRES D'ARMES
-// ==========================================
-let currentWeaponIndexForAccessory = null;
-
-function openWeaponAccessoryModal(wIdx) {
-    currentWeaponIndexForAccessory = wIdx;
-    const isCampaign = currentGang && currentGang.isEstablished;
-    let html = `<h3>Sélectionner un accessoire pour l'arme</h3><br>`;
-
-    if (isCampaign) {
-        html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash) :</h4>`;
-        if (!currentGang.stash) currentGang.stash = [];
-        let availableAccs = currentGang.stash.filter(item => {
-            let itemType = (typeof item === 'object' && item.type) ? item.type : '';
-            return itemType === 'Accessoire';
-        });
-
-        if (availableAccs.length === 0) {
-            html += `<p style="color:#888; font-size:12px; margin-bottom:10px;">Aucun accessoire d'arme dans la réserve.</p>`;
+    if (w.replaces) {
+        let repWpn = db.weapons.find(dw => dw.id === w.replaces || dw.name === w.replaces);
+        if (repWpn) {
+            let restored = JSON.parse(JSON.stringify(repWpn));
+            restored.isDefault = true;
+            tempFighter.weapons.splice(idx, 1, restored);
         } else {
-            availableAccs.forEach(stItem => {
-                let itemName = typeof stItem === 'string' ? stItem : stItem.name;
-                html += `
-                    <div class="fighter-item">
-                        <span><strong>${itemName}</strong> <small style="color:#2ecc71;">(Réserve - 0 cr)</small></span>
-                        <button class="btn-cyan" onclick="attachAccessoryFromStash('${itemName}')">Équiper (Stash)</button>
-                    </div>
-                `;
-            });
+            tempFighter.weapons.splice(idx, 1);
         }
-        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter un Accessoire de Clan :</h4>`;
-    }
-
-    let accessories = db.equipment.filter(e => e.type === "Accessoire" && e.is_gang === true);
-    if (accessories.length === 0) {
-        html += `<p style="color:#888; font-size:12px;">Aucun accessoire disponible.</p>`;
+    } else if (isCutterWpn && w.id !== "wpn_cutter_grenade_launcher" && tempFighter.equipment.some(e => e.id === "eq_escher_cutter" || e.name === "Escher cutter")) {
+        let gl = db.weapons.find(dw => dw.id === "wpn_cutter_grenade_launcher");
+        if (gl) {
+            let restored = JSON.parse(JSON.stringify(gl));
+            restored.isDefault = true;
+            tempFighter.weapons.splice(idx, 1, restored);
+        } else {
+            tempFighter.weapons.splice(idx, 1);
+        }
     } else {
-        accessories.forEach(acc => {
-            html += `
-                <div class="fighter-item">
-                    <span><strong>${acc.name}</strong> (${acc.cost_credits}c) <br><small>${acc.effect || ''}</small></span>
-                    <button onclick="attachAccessoryToWeapon('${acc.id}')">${isCampaign ? 'Acheter' : 'Équiper'}</button>
-                </div>
-            `;
-        });
+        tempFighter.weapons.splice(idx, 1);
     }
 
-    openModal("Accessoire d'arme", html);
-}
-
-function attachAccessoryToWeapon(accId) {
-    const acc = db.equipment.find(item => item.id === accId);
-    if (currentWeaponIndexForAccessory !== null) {
-        tempFighter.weapons[currentWeaponIndexForAccessory].accessory = JSON.parse(JSON.stringify(acc));
-    }
-    closeModal();
-    renderFighterEdit(document.getElementById('main-content'));
-}
-
-function attachAccessoryFromStash(accName) {
-    if (!currentGang || !currentGang.stash) return;
-
-    let sIdx = currentGang.stash.findIndex(item => (typeof item === 'string' ? item : item.name) === accName);
-    if (sIdx >= 0 && currentWeaponIndexForAccessory !== null) {
-        currentGang.stash.splice(sIdx, 1);
-        let foundDbAcc = db.equipment.find(e => e.name === accName);
-        let accObj = foundDbAcc ? JSON.parse(JSON.stringify(foundDbAcc)) : { name: accName, cost_credits: 0 };
-        accObj.fromStash = true;
-        tempFighter.weapons[currentWeaponIndexForAccessory].accessory = accObj;
-        saveGangs();
-    }
-    closeModal();
-    renderFighterEdit(document.getElementById('main-content'));
-}
-
-function removeWeaponAccessory(wIdx) {
-    let acc = tempFighter.weapons[wIdx].accessory;
-    if (acc && currentGang && currentGang.isEstablished) {
-        if (!currentGang.stash) currentGang.stash = [];
-        currentGang.stash.push({ name: acc.name, type: "Accessoire", cost: acc.cost_credits || 0 });
-        saveGangs();
-    }
-    tempFighter.weapons[wIdx].accessory = null;
     renderFighterEdit(document.getElementById('main-content'));
 }
 
@@ -1026,9 +1145,11 @@ function removeWeaponAccessory(wIdx) {
 // ==========================================
 function openEquipSelectModal() {
     const isCampaign = currentGang && currentGang.isEstablished;
+    let isMercOrBeast = isMercOrBeastProfile(tempFighter);
+    let isHiveScum = tempFighter.charId === "merc_hive_scum";
     let html = ``;
 
-    if (isCampaign) {
+    if (isCampaign && !isHiveScum && !isMercOrBeast) {
         html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash) :</h4>`;
         if (!currentGang.stash) currentGang.stash = [];
         let availableEquip = currentGang.stash.filter(item => {
@@ -1050,12 +1171,27 @@ function openEquipSelectModal() {
                 `;
             });
         }
-        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter sur la Liste de Clan :</h4>`;
+        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter sur la Liste :</h4>`;
     }
 
-    let generalEquipments = db.equipment.filter(e => e.type !== "Accessoire" && e.is_gang === true);
+    let generalEquipments = db.equipment.filter(e => {
+        if (e.type === "Accessoire") return false;
+
+        if (isMercOrBeast) {
+            return e.specific_to === tempFighter.charId;
+        }
+
+        if (isHiveScum) {
+            return e.is_hive_scum === true;
+        }
+
+        if (e.specific_to && e.specific_to !== tempFighter.charId) return false;
+
+        return e.is_gang === true;
+    });
+
     if (generalEquipments.length === 0) {
-        html += `<p style="color:#888; font-size:12px;">Aucun équipement de clan disponible.</p>`;
+        html += `<p style="color:#888; font-size:12px;">Aucun équipement disponible pour ce combattant.</p>`;
     } else {
         generalEquipments.forEach(e => {
             html += `
@@ -1073,6 +1209,16 @@ function openEquipSelectModal() {
 function addEquipment(eId) {
     const e = db.equipment.find(item => item.id === eId);
     tempFighter.equipment.push(JSON.parse(JSON.stringify(e)));
+
+    if (e.id === "eq_escher_cutter") {
+        let gl = db.weapons.find(w => w.id === "wpn_cutter_grenade_launcher");
+        if (gl && !tempFighter.weapons.some(w => w.requires_equip === "eq_escher_cutter")) {
+            let glItem = JSON.parse(JSON.stringify(gl));
+            glItem.isDefault = true;
+            tempFighter.weapons.push(glItem);
+        }
+    }
+
     closeModal();
     renderFighterEdit(document.getElementById('main-content'));
 }
@@ -1087,6 +1233,16 @@ function addEquipmentFromStash(itemName) {
         let newE = foundDbE ? JSON.parse(JSON.stringify(foundDbE)) : { name: itemName, cost_credits: 0 };
         newE.fromStash = true;
         tempFighter.equipment.push(newE);
+
+        if (newE.id === "eq_escher_cutter" || newE.name === "Escher cutter") {
+            let gl = db.weapons.find(w => w.id === "wpn_cutter_grenade_launcher");
+            if (gl && !tempFighter.weapons.some(w => w.requires_equip === "eq_escher_cutter")) {
+                let glItem = JSON.parse(JSON.stringify(gl));
+                glItem.isDefault = true;
+                tempFighter.weapons.push(glItem);
+            }
+        }
+
         saveGangs();
     }
     closeModal();
@@ -1095,11 +1251,20 @@ function addEquipmentFromStash(itemName) {
 
 function removeEquipment(idx) {
     let eq = tempFighter.equipment[idx];
-    if (currentGang && currentGang.isEstablished) {
+    const charDef = db.characters.find(c => c.id === tempFighter.charId);
+    const isMercOrBeast = isMercOrBeastProfile(tempFighter);
+    const isDefault = eq.isDefault || (charDef && charDef.default_equipment && (charDef.default_equipment.includes(eq.id) || charDef.default_equipment.includes(eq.name)));
+
+    if (currentGang && currentGang.isEstablished && !isDefault && !isMercOrBeast) {
         if (!currentGang.stash) currentGang.stash = [];
         currentGang.stash.push({ name: eq.name, type: eq.type || "Équipement", cost: eq.cost_credits || 0 });
         saveGangs();
     }
+
+    if (eq.id === "eq_escher_cutter" || eq.name === "Escher cutter") {
+        tempFighter.weapons = tempFighter.weapons.filter(w => w.requires_equip !== "eq_escher_cutter");
+    }
+
     tempFighter.equipment.splice(idx, 1);
     renderFighterEdit(document.getElementById('main-content'));
 }
@@ -1229,10 +1394,17 @@ function removeSkill(idx) {
 function saveFighter() {
     if (!tempFighter.customName.trim()) return alert("Veuillez saisir un nom pour le combattant.");
     
+    if (tempFighter.charId === 'merc_hive_scum') {
+        let wCost = (tempFighter.weapons || []).reduce((sum, w) => sum + (w.isDefault ? 0 : (w.cost_credits || 0)), 0);
+        let eCost = (tempFighter.equipment || []).reduce((sum, e) => sum + (e.isDefault ? 0 : (e.cost_credits || 0)), 0);
+        if (wCost + eCost > 60) {
+            return alert(`Dépassement de limite ! Le matériel du Hive Scum ne peut pas dépasser 60 crédits au total (Actuel : ${wCost + eCost} cr).`);
+        }
+    }
+
     tempFighter.totalCost = calculateFighterCost(tempFighter);
 
     if (!currentGang.isEstablished) {
-        // En création de gang initiale
         let oldCost = 0;
         if (appState.editTarget !== null) {
             oldCost = currentGang.members[appState.editTarget].totalCost;
@@ -1241,37 +1413,34 @@ function saveFighter() {
         if (currentGang.credits - diff < 0) return alert("Crédits insuffisants !");
         currentGang.credits -= diff;
     } else {
-        // En campagne : calcul des crédits à prélever pour les éléments neufs (non issus de la réserve)
         let creditsToPay = 0;
 
         if (appState.editTarget === null) {
-            // Recrutement d'un nouveau guerrier
             const charDef = db.characters.find(c => c.id === tempFighter.charId);
             creditsToPay += (charDef ? charDef.cost : 0);
 
             (tempFighter.weapons || []).forEach(w => {
-                if (!w.fromStash) creditsToPay += (w.cost_credits || 0);
-                if (w.accessory && !w.accessory.fromStash) creditsToPay += (w.accessory.cost_credits || 0);
+                if (!w.fromStash && !w.isDefault) creditsToPay += (w.cost_credits || 0);
+                if (w.accessory && !w.accessory.fromStash && !w.accessory.isDefault) creditsToPay += (w.accessory.cost_credits || 0);
             });
             (tempFighter.equipment || []).forEach(e => {
-                if (!e.fromStash) creditsToPay += (e.cost_credits || 0);
+                if (!e.fromStash && !e.isDefault) creditsToPay += (e.cost_credits || 0);
             });
         } else {
-            // Modification d'un guerrier existant
             let origFighter = currentGang.members[appState.editTarget];
             
             (tempFighter.weapons || []).forEach(w => {
                 let wasOnOrig = (origFighter.weapons || []).some(ow => ow.name === w.name);
-                if (!wasOnOrig && !w.fromStash) creditsToPay += (w.cost_credits || 0);
+                if (!wasOnOrig && !w.fromStash && !w.isDefault) creditsToPay += (w.cost_credits || 0);
                 if (w.accessory) {
                     let wasAccOnOrig = (origFighter.weapons || []).some(ow => ow.accessory && ow.accessory.name === w.accessory.name);
-                    if (!wasAccOnOrig && !w.accessory.fromStash) creditsToPay += (w.accessory.cost_credits || 0);
+                    if (!wasAccOnOrig && !w.accessory.fromStash && !w.accessory.isDefault) creditsToPay += (w.accessory.cost_credits || 0);
                 }
             });
 
             (tempFighter.equipment || []).forEach(e => {
                 let wasOnOrig = (origFighter.equipment || []).some(oe => oe.name === e.name);
-                if (!wasOnOrig && !e.fromStash) creditsToPay += (e.cost_credits || 0);
+                if (!wasOnOrig && !e.fromStash && !e.isDefault) creditsToPay += (e.cost_credits || 0);
             });
         }
 
@@ -1297,19 +1466,36 @@ function saveFighter() {
 function removeFighter(idx) {
     if (!confirm("Voulez-vous vraiment licencier ce combattant ?")) return;
     const m = currentGang.members[idx];
+    const charDef = db.characters.find(c => c.id === m.charId);
+    const isMercOrBeast = isMercOrBeastProfile(m);
 
     if (currentGang.isEstablished) {
         if (!currentGang.stash) currentGang.stash = [];
+        let addedToStash = false;
+
         (m.weapons || []).forEach(w => {
-            if (w.accessory) {
-                currentGang.stash.push({ name: w.accessory.name, type: "Accessoire", cost: w.accessory.cost_credits || 0 });
+            const isDefault = w.isDefault || (charDef && charDef.default_weapons && (charDef.default_weapons.includes(w.id) || charDef.default_weapons.includes(w.name)));
+            const isCutterWpn = w.requires_equip === "eq_escher_cutter";
+            if (!isDefault && !isMercOrBeast && !isCutterWpn) {
+                if (w.accessory && !w.accessory.isDefault) {
+                    currentGang.stash.push({ name: w.accessory.name, type: "Accessoire", cost: w.accessory.cost_credits || 0 });
+                }
+                currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost_credits || 0 });
+                addedToStash = true;
             }
-            currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost_credits || 0 });
         });
+
         (m.equipment || []).forEach(e => {
-            currentGang.stash.push({ name: e.name, type: e.type || "Équipement", cost: e.cost_credits || 0 });
+            const isDefault = e.isDefault || (charDef && charDef.default_equipment && (charDef.default_equipment.includes(e.id) || charDef.default_equipment.includes(e.name)));
+            if (!isDefault && !isMercOrBeast) {
+                currentGang.stash.push({ name: e.name, type: e.type || "Équipement", cost: e.cost_credits || 0 });
+                addedToStash = true;
+            }
         });
-        alert(`Les équipements de ${m.customName} ont été remis dans la réserve de gang.`);
+
+        if (addedToStash) {
+            alert(`Les équipements supplémentaires de ${m.customName} ont été remis dans la réserve de gang.`);
+        }
     } else {
         currentGang.credits += m.totalCost;
     }
@@ -1319,6 +1505,7 @@ function removeFighter(idx) {
     saveGangs();
     renderGangManage(document.getElementById('main-content'));
 }
+
 // ==========================================
 // MODALE & UTILS EXPORT
 // ==========================================
