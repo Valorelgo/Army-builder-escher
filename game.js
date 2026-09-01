@@ -481,28 +481,30 @@ function renderGameView(container) {
         </div>
 
         <h3>Résumé de la Bande</h3>
+        <!-- DEBUT DU CONTENEUR SUR 2 COLONNES -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 10px; align-items: start;">
     `;
 
     currentGameRoster.forEach((m, idx) => {
         let activeConds = Object.keys(m.conditions || {}).filter(c => m.conditions[c]);
         let isOOA = (m.status === 'Out of action');
 
-        // Hiérarchie des couleurs : Grisé (OOA) > Rouge (Sérieusement blessé) > Orange (Blessé) > Jaune (Pilonné)
+        // Couleurs du nom : Grisé (OOA) > Rouge (Sérieusement blessé) > Jaune (Pilonné) > Orange (Blessé)
         let nameColor = '#ffffff';
         if (isOOA) {
             nameColor = '#777777';
         } else if (m.status === 'Sérieusement blessé') {
-            nameColor = '#e74c3c'; // Rouge
+            nameColor = '#e74c3c';
+        } else if (m.status === 'Pilonné' || m.suppressed) {
+            nameColor = '#f1c40f';
         } else if (m.conditions && m.conditions['Blessé']) {
-            nameColor = '#e67e22'; // Orange
-        } else if (m.suppressed || m.status === 'Suppressed') {
-            nameColor = '#f1c40f'; // Jaune
+            nameColor = '#e67e22';
         }
 
         let ooaCardStyle = isOOA ? 'background: #141414; opacity: 0.45; filter: grayscale(1); border: 1px solid #333;' : '';
 
         html += `
-            <div class="card" style="margin-bottom:10px; ${ooaCardStyle}">
+            <div class="card" style="margin-bottom:0; ${ooaCardStyle}">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                     <div>
                         <strong style="font-size:16px; cursor:pointer; text-decoration:${isOOA ? 'line-through' : 'underline'}; color:${nameColor};" onclick="openFighterDetailModal(${idx})">
@@ -510,21 +512,31 @@ function renderGameView(container) {
                         </strong> 
                         <small style="color:${isOOA ? '#666' : 'inherit'};">(${(m.type || []).join(', ')})</small><br>
                         <small style="color:${isOOA ? '#666' : 'inherit'};">Armes : ${(m.weapons || []).map(w => w.name + (w.accessory ? ' ['+w.accessory.name+']' : '')).join(', ') || 'Aucune'}</small>
-                        ${activeConds.length > 0 ? `<br><small style="color:${isOOA ? '#666' : '#e67e22'};"><strong>Conditions :</strong> ${activeConds.join(', ')}</small>` : ''}
+                        ${activeConds.length > 0 ? `<br><small style="color:${isOOA ? '#666' : '#e67e22'};"><strong>Conditions :</strong> ${activeConds.map(c => `<span style="cursor:pointer; text-decoration:underline;" onclick="showConditionDetails('${c.replace(/'/g, "\\'")}')">${c}</span>`).join(', ')}</small>` : ''}
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:15px; margin-top:5px; flex-wrap:wrap;">
-                        <div>
-                            PV : <strong>${m.currentHP}</strong> / ${m.stats ? m.stats.W : 1}
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:5px; flex-wrap:wrap;">
+                        <!-- POINTS DE VIE MODIFIABLES DIRECTEMENT -->
+                        <div style="display:flex; align-items:center; gap:3px;">
+                            <span>PV :</span>
+                            <button class="btn" style="padding:1px 5px; font-weight:bold;" onclick="adjHP(${idx}, -1)">-</button>
+                            <strong style="font-size:15px; min-width:16px; text-align:center;">${m.currentHP}</strong> / ${m.stats ? m.stats.W : 1}
+                            <button class="btn" style="padding:1px 5px; font-weight:bold;" onclick="adjHP(${idx}, 1)">+</button>
                         </div>
+
+                        <!-- MENU DÉROULANT DES ÉTATS -->
                         <div>
-                            Statut : <strong style="color:${isOOA ? '#e74c3c' : 'inherit'};">${m.status}</strong>
+                            <select style="background:#222; color:#fff; border:1px solid #444; padding:3px 5px; border-radius:4px; font-size:12px;" onchange="updateFighterStatus(${idx}, this.value)">
+                                <option value="Prêt" ${m.status === 'Prêt' ? 'selected' : ''}>Prêt</option>
+                                <option value="Engagé" ${m.status === 'Engagé' ? 'selected' : ''}>Engagé</option>
+                                <option value="Pilonné" ${m.status === 'Pilonné' ? 'selected' : ''}>Pilonné</option>
+                                <option value="Sérieusement blessé" ${m.status === 'Sérieusement blessé' ? 'selected' : ''}>Sérieusement blessé</option>
+                                <option value="Out of action" ${m.status === 'Out of action' ? 'selected' : ''}>Out of action</option>
+                            </select>
                         </div>
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <label style="cursor:pointer; font-size:13px;">
-                                <input type="checkbox" ${m.suppressed ? 'checked' : ''} onchange="toggleSuppressed(${idx})"> Pilonné
-                            </label>
-                            <label style="cursor:pointer; font-size:13px;">
+
+                        <div>
+                            <label style="cursor:pointer; font-size:12px;">
                                 <input type="checkbox" ${m.activated ? 'checked' : ''} onchange="toggleActivation(${idx})"> Activé
                             </label>
                         </div>
@@ -535,8 +547,12 @@ function renderGameView(container) {
     });
 
     html += `
-        <div style="position:fixed; bottom:0; left:0; width:100%; background:var(--panel-bg); padding:10px; display:flex; justify-content:center; gap:15px; border-top:2px solid var(--accent-purple); z-index:1000;">
-            <button onclick="endRound()">🔄 Fin de Round (Reset Activations)</button>
+        </div> <!-- FIN DU CONTENEUR SUR 2 COLONNES -->
+
+        <div style="position:fixed; bottom:0; left:0; width:100%; background:var(--panel-bg); padding:10px; display:flex; justify-content:center; gap:10px; border-top:2px solid var(--accent-purple); z-index:1000; flex-wrap:wrap;">
+            <button class="btn btn-cyan" onclick="openPdfModal('📖 Règles', 'Recapitulatif de regles.pdf')">📖 Règles</button>
+            <button class="btn btn-cyan" onclick="openPdfModal('📊 Tableaux', 'Tableaux.pdf')">📊 Tableaux</button>
+            <button onclick="endRound()">🔄 Fin de Round</button>
             <button class="btn-danger" onclick="endGame()">🏁 Terminer la Partie</button>
         </div>
         <div style="height:60px;"></div>
@@ -665,6 +681,7 @@ function openFighterDetailModal(idx) {
                     <select onchange="updateFighterStatus(${idx}, this.value)">
                         <option value="Prêt" ${m.status === 'Prêt' ? 'selected' : ''}>Prêt</option>
                         <option value="Engagé" ${m.status === 'Engagé' ? 'selected' : ''}>Engagé</option>
+                        <option value="Pilonné" ${m.status === 'Pilonné' ? 'selected' : ''}>Pilonné</option>
                         <option value="Sérieusement blessé" ${m.status === 'Sérieusement blessé' ? 'selected' : ''}>Sérieusement blessé</option>
                         <option value="Out of action" ${m.status === 'Out of action' ? 'selected' : ''}>Out of action</option>
                     </select>
@@ -763,7 +780,10 @@ function adjHP(idx, amount) {
     let m = currentGameRoster[idx];
     if (m) {
         m.currentHP = Math.max(0, m.currentHP + amount);
-        openFighterDetailModal(idx);
+        let modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay && !modalOverlay.classList.contains('hidden')) {
+            openFighterDetailModal(idx);
+        }
         renderGameView(document.getElementById('main-content'));
     }
 }
@@ -771,6 +791,11 @@ function adjHP(idx, amount) {
 function updateFighterStatus(idx, val) {
     if (currentGameRoster[idx]) {
         currentGameRoster[idx].status = val;
+        currentGameRoster[idx].suppressed = (val === 'Pilonné');
+        let modalOverlay = document.getElementById('modal-overlay');
+        if (modalOverlay && !modalOverlay.classList.contains('hidden')) {
+            openFighterDetailModal(idx);
+        }
         renderGameView(document.getElementById('main-content'));
     }
 }
@@ -2011,4 +2036,29 @@ function executeDiscountRecruitment(charDef, discount, territoryIdx) {
 
     alert(`${charDef.name} a été recruté pour ${finalCost}c (réduction de ${discount}c appliquée) !`);
     renderPostCycleView(document.getElementById('main-content'));
+}
+
+function showConditionDetails(condName) {
+    let desc = "Description non renseignée.";
+    if (typeof db !== 'undefined' && db.conditions) {
+        let key = Object.keys(db.conditions).find(k => k.toLowerCase() === condName.toLowerCase() || condName.toLowerCase().startsWith(k.toLowerCase()));
+        if (key) desc = db.conditions[key];
+    }
+    openModal(`Condition : ${condName}`, `<p style="padding:10px; font-size:14px; line-height:1.5;">${desc}</p>`);
+}
+
+function openPdfModal(title, url) {
+    // #navpanes=0 masque le volet de gauche, view=FitH ajuste sur la largeur
+    let pdfUrl = `${url}#navpanes=0&toolbar=0&view=FitH`;
+
+    let html = `
+        <div style="height:85vh; width:100%;">
+            <iframe src="${pdfUrl}" style="width:100%; height:100%; border:none;"></iframe>
+        </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+            <button class="btn btn-cyan" onclick="window.open('${url}', '_blank')">↗️ Ouvrir en grand (Onglet)</button>
+            <button class="btn" onclick="closeModal()">Fermer</button>
+        </div>
+    `;
+    openModal(title, html);
 }
