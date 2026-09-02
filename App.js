@@ -489,7 +489,7 @@ const db = {
         { id: "tac_remorseless_killer", name: "Remorseless killer", timing: "Quand un guerrier fait un coup de grâce, avant de jeter les dés", effect: "L'ennemi est directement out of combat sans jet de dé." },
         { id: "tac_last_gap", name: "Last gap", timing: "Quand un guerrier reçoit l'état out of action", effect: "Le guerrier peut immédiatement faire un tir avant d'être retiré du terrain." },
         { id: "tac_thundering_charge", name: "Thundering charge", timing: "Quand un guerrier déclare une charge, avant de jeter le dé de distance", effect: "Lancer 2 dés et choisir lequel garder pour la distance de charge." },
-        { id: "tac_chain_attack", name: "Chain attack", timing: "Quand un guerrier a résolu un combat et n'est plus engagé", effect: "Le guerrier peut immédiatement effectuer une charge gratuite même s'il a déjà chargé ce tour. La distance de charge sera de D6+2\"." },
+        { id: "tac_chain_attack", name: "Chain attack", timing: "Quand un guerrier a résolu un combat et n'est plus engagé", effect: "Le guerrier peut immédiatement effectuer une charge gratuite même s'il a déjà charged ce tour. La distance de charge sera de D6+2\"." },
         { id: "tac_opening_volley", name: "Opening volley", timing: "Avant le premier round et le jet de priorité", effect: "Un guerrier peut immédiatement effectuer un tir sans perdre son état prêt." },
         { id: "tac_you", name: "You !", timing: "Quand un guerrier s'active, avant ses actions", effect: "Désigner un guerrier ennemi, le guerrier aura +1 pour blesser cet ennemi pour toute la partie. Tant que l'ennemi est sur la table, le guerrier ne peut prendre que lui pour cible de ses actions." },
         { id: "tac_rapid_healing", name: "Rapid healing", timing: "Quand un guerrier s'active, avant ses actions", effect: "Le guerrier récupère immédiatement 1 PV perdu." },
@@ -537,7 +537,7 @@ const db = {
 // ==========================================
 // STATE MANAGEMENT & LOCAL STORAGE
 // ==========================================
-let appState = { view: 'menu', mode: null, editTarget: null };
+let appState = { view: 'menu', mode: null, editTarget: null, isQuickMatch: false };
 let savedGangs = JSON.parse(localStorage.getItem('escherGangs')) || {};
 let currentGang = null;
 let tempFighter = null;
@@ -633,7 +633,6 @@ function renderMenu(container) {
             <p>Sélectionnez une option :</p><br>
             <button onclick="navigate('gang-create')">Création de Gang</button><br>
             <button onclick="appState.mode='campaign'; navigate('gang-select')">Suivi de Gang (Campagne)</button><br>
-            <button onclick="appState.mode='quick'; navigate('gang-select')">Partie Rapide</button><br>
             <hr style="border-color:var(--border-color); margin: 20px 0;">
             <button onclick="importGang()">Importer un gang (.json)</button>
         </div>
@@ -710,7 +709,8 @@ function renderGangManage(container) {
             <h2>Gestion de Gang : ${currentGang.name}</h2>
             <button onclick="openRecruitModal()">+ Recruter un Combattant</button>
             <button onclick="openGangTacticsModal()">🎴 Cartes Tactiques (${(currentGang.tactics || []).length})</button>
-            <button onclick="navigate('game-setup')">⚔️ Lancer une partie</button>
+            <button onclick="appState.isQuickMatch = false; navigate('game-setup')">⚔️ Partie de campagne</button>
+            <button class="btn-cyan" onclick="appState.isQuickMatch = true; navigate('game-setup')">⚡ Partie rapide</button>
             <button onclick="if(typeof renderPostCycleView === 'function') { renderPostCycleView(document.getElementById('main-content')); }">🔄 Lancer un Post-Cycle</button>
             ${!currentGang.isEstablished ? `<button class="btn-cyan" onclick="finishGangCreation()">✅ Valider la création du gang</button>` : ''}
             <button onclick="exportGang('${currentGang.name}')">Export JSON</button>
