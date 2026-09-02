@@ -112,6 +112,27 @@ function applyStatUpgrade(m, statKey) {
 // ==========================================
 // BANDEAU SUPÉRIEUR
 // ==========================================
+function calculateGangReputation(gang) {
+    if (!gang) return 1;
+    let baseRep = (gang.reputation !== undefined) ? gang.reputation : 1;
+    let territoryBonus = 0;
+
+    if (gang.territories && Array.isArray(gang.territories)) {
+        gang.territories.forEach(terId => {
+            let tDef = getTerritoryDef(terId);
+            if (tDef) {
+                if (tDef.reputationBonus) {
+                    territoryBonus += tDef.reputationBonus;
+                } else if (tDef.desc) {
+                    let match = tDef.desc.match(/\+(\d+)\s*(?:points?\s*de\s*)?réputation/i);
+                    if (match) territoryBonus += parseInt(match[1]);
+                }
+            }
+        });
+    }
+    return Math.max(1, baseRep + territoryBonus);
+}
+
 function updateTopBar() {
     const topBar = document.getElementById('top-bar');
     if (!topBar) return;
@@ -125,24 +146,34 @@ function updateTopBar() {
     topBar.style.display = 'block';
     topBar.classList.remove('hidden');
 
-    let fightersVal = (currentGang.members || []).reduce((sum, m) => sum + (m.totalCost || m.cost || 0), 0);
+    // 1. Gang Rating = Somme des guerriers + leurs équipements
+    let gangRating = (currentGang.members || []).reduce((sum, m) => sum + (m.totalCost || m.cost || 0), 0);
+
+    // 2. Valeur de la Réserve (Stash)
     let stashVal = (currentGang.stash || []).reduce((sum, item) => {
         let itemCost = (typeof item === 'object') ? (item.cost || item.cost_credits || item.price || 0) : 0;
         return sum + itemCost;
     }, 0);
 
-    let gangValue = fightersVal + stashVal;
+    // 3. Richesse = Gang Rating + Valeur du Stash
+    let gangWealth = gangRating + stashVal;
+
+    // 4. Réputation totale
+    let totalRep = calculateGangReputation(currentGang);
 
     topBar.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:6px 15px; background:var(--panel-bg, #1e1e1e); border-bottom:1px solid #333; box-sizing:border-box;">
             <div>
                 <strong>${currentGang.name || 'Gang'}</strong> | 
                 Crédits : <strong style="color:var(--accent-cyan, #00d2d3);">${currentGang.credits || 0} cr</strong> | 
-                Valeur du gang : <strong style="color:var(--accent-purple, #9b59b6);">${gangValue} cr</strong>
+                Gang Rating : <strong style="color:var(--accent-purple, #9b59b6);">${gangRating} cr</strong> | 
+                Richesse : <strong style="color:#f39c12;">${gangWealth} cr</strong> | 
+                Réputation : <strong style="color:#2ecc71;">${totalRep}</strong>
             </div>
             <div style="display:flex; gap:10px;">
                 <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openStashModal()">📦 Réserve (Stash)</button>
                 <button class="btn" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openTerritoriesModal()">🚩 Territoires</button>
+                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openMatchHistoryModal()">📜 Historique</button>
             </div>
         </div>
     `;
@@ -163,6 +194,7 @@ function setGameHeaderVisibility(inGame) {
 }
 
 function safeSave() {
+    if (typeof appState !== 'undefined' && appState.isQuickMatch) return;
     if (typeof saveGangs === 'function') saveGangs();
     updateTopBar();
 }
@@ -380,10 +412,13 @@ function renderGameSetup(container) {
         return;
     }
 
+    let isQuick = typeof appState !== 'undefined' && appState.isQuickMatch;
+
     let html = `
         <div class="card">
-            <h2>Préparation de la Partie</h2>
-            <p>Sélectionnez les combattants qui participent à l'affrontement :</p><br>
+            <h2>Préparation de la Partie ${isQuick ? '(⚡ Partie Rapide)' : '(⚔️ Partie de Campagne)'}</h2>
+            <p>Sélectionnez les combattants qui participent à l'affrontement :</p>
+            ${isQuick ? '<p style="color:var(--accent-purple); font-size:12px; margin-top:4px;">💡 Mode Partie Rapide : aucune modification ne sera enregistrée sur le gang à la fin de l\'affrontement.</p>' : ''}<br>
     `;
 
     if (!currentGang.members || currentGang.members.length === 0) {
@@ -472,10 +507,12 @@ function startGame() {
 function renderGameView(container) {
     setGameHeaderVisibility(true);
 
+    let isQuick = typeof appState !== 'undefined' && appState.isQuickMatch;
+
     let html = `
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <h2>Partie en cours — ${currentGang ? currentGang.name : ''}</h2>
+                <h2>Partie en cours — ${currentGang ? currentGang.name : ''} ${isQuick ? '(⚡ Partie Rapide)' : ''}</h2>
                 <button onclick="openTacticsModal()">🎴 Cartes Tactiques</button>
             </div>
         </div>
@@ -584,6 +621,13 @@ function endRound() {
 function endGame() {
     if (!confirm("Voulez-vous vraiment terminer la partie ?")) return;
     setGameHeaderVisibility(false);
+
+    if (typeof appState !== 'undefined' && appState.isQuickMatch) {
+        appState.isQuickMatch = false;
+        alert("Partie rapide terminée. Aucune donnée n'a été modifiée.");
+        safeNavigate('menu');
+        return;
+    }
 
     if (currentGang && currentGang.members) {
         currentGameRoster.forEach(battleFighter => {
@@ -873,7 +917,7 @@ function renderPostBattleView(container) {
     if (!container) return;
 
     if (!currentGang) {
-        container.innerHTML = `<div class="card"><p>Aucun gang charged.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
+        container.innerHTML = `<div class="card"><p>Aucun gang chargé.</p><button onclick="safeNavigate('gang-manage')">Retour</button></div>`;
         return;
     }
 
@@ -881,15 +925,22 @@ function renderPostBattleView(container) {
 
     let ooaFighters = (currentGang.members || []).filter(m => m.ooa === true);
 
+    // Préparation des listes déroulantes pour les territoires
+    let dbTerritories = (typeof db !== 'undefined' && db.territories) ? db.territories : [];
+    let gangTerritories = currentGang.territories || [];
+
+    let optGained = `<option value="">-- Aucun --</option>` + dbTerritories.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+    let optLost = `<option value="">-- Aucun --</option>` + gangTerritories.map((tName, idx) => `<option value="${idx}">${tName}</option>`).join('');
+
     let html = `
         <div class="card">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
                 <h2>Séquence Post-Bataille — ${currentGang.name}</h2>
                 <button class="btn btn-cyan" onclick="openStashModal()">📦 Réserve du Gang (Stash)</button>
             </div>
-            <div style="margin-top:10px;">
+            <div style="margin-top:10px; display:flex; gap:10px;">
                 <button class="btn" onclick="safeNavigate('gang-manage')">← Retour Gestion du Gang</button>
-                <button class="btn btn-cyan" onclick="renderPostCycleView(document.getElementById('main-content'))">Passer au Post-Cycle →</button>
+                <button class="btn btn-cyan" onclick="startPostCycleView(document.getElementById('main-content'))">Passer au Post-Cycle →</button>
             </div>
             <hr style="margin: 15px 0; border-color: #333;">
 
@@ -933,6 +984,7 @@ function renderPostBattleView(container) {
                 <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
                     <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Partic.)</button>
                     <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Assistance)</button>
+                    <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Scénario)</button>
                     <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Injure)</button>
                     <button class="btn" onclick="addFighterXP('${m.id}', 2)">+2 XP (OOA)</button>
                     <button class="btn" onclick="addFighterXP('${m.id}', 1)">+1 XP (Obj.)</button>
@@ -942,21 +994,81 @@ function renderPostBattleView(container) {
         `;
     });
 
+    let baseRep = (currentGang.reputation !== undefined) ? currentGang.reputation : 1;
+    let totalRep = calculateGangReputation(currentGang);
+    let territoryBonus = totalRep - baseRep;
+
     html += `
             </div>
             <hr style="margin: 15px 0; border-color: #333;">
-            <h3>3. Territoires & Réputation</h3>
-            <p>Réputation : <strong>${currentGang.reputation || 0}</strong> 
-                <button class="btn" onclick="adjustReputation(1)">+1</button> 
-                <button class="btn" onclick="adjustReputation(-1)">-1</button>
+
+            <h3>3. Rapport & Enregistrement de la Bataille</h3>
+            <div style="background:#111; border:1px solid var(--accent-purple, #9b59b6); padding:12px; border-radius:6px; margin-bottom:15px;">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label style="font-size:12px;">Joueur Adversaire :</label>
+                        <input type="text" id="hist-opponent-name" placeholder="Ex : Marc" style="width:100%; padding:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Gang Adversaire :</label>
+                        <input type="text" id="hist-opponent-gang" placeholder="Ex : Escher" style="width:100%; padding:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Résultat :</label>
+                        <select id="hist-result" style="width:100%; padding:4px; background:#222; color:#fff; border:1px solid #444;">
+                            <option value="Victoire">Victoire</option>
+                            <option value="Défaite">Défaite</option>
+                            <option value="Égalité">Égalité</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Gain Cr. Mission Principale :</label>
+                        <input type="number" id="hist-cred-primary" value="0" min="0" style="width:100%; padding:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Gain Cr. Mission Sec. :</label>
+                        <input type="number" id="hist-cred-secondary" value="0" min="0" style="width:100%; padding:4px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Variation Réputation (+/-) :</label>
+                        <input type="number" id="hist-rep" value="0" style="width:100%; padding:4px;" placeholder="+1, -1...">
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Territoire Gagné :</label>
+                        <select id="hist-ter-gained" style="width:100%; padding:4px; background:#222; color:#fff; border:1px solid #444;">
+                            ${optGained}
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:12px;">Territoire Perdu :</label>
+                        <select id="hist-ter-lost" style="width:100%; padding:4px; background:#222; color:#fff; border:1px solid #444;">
+                            ${optLost}
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-cyan" style="width:100%; margin-top:5px;" onclick="saveMatchToHistory()">
+                    💾 Valider & Enregistrer la Partie
+                </button>
+            </div>
+
+            <hr style="margin: 15px 0; border-color: #333;">
+            <h3>4. Territoires & Réputation Actuels</h3>
+            <p>
+                Réputation Totale : <strong style="color:#2ecc71; font-size:16px;">${totalRep}</strong> 
+                <small style="color:#aaa;">(Base : ${baseRep}${territoryBonus > 0 ? ` | Bonus Territoires : +${territoryBonus}` : ''})</small>
             </p>
+            <div style="display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap;">
+                <button class="btn btn-cyan" onclick="adjustReputation(1)">+1 Réputation</button>
+                <button class="btn btn-cyan" onclick="adjustReputation(2)">+2 Réputation</button>
+                <button class="btn" onclick="adjustReputation(-1)">-1 Réputation</button>
+            </div>
             <button class="btn btn-cyan" onclick="openTerritoriesModal()">🚩 Gérer les Territoires (${(currentGang.territories || []).length})</button>
         </div>
     `;
 
     container.innerHTML = html;
 }
-
 function applyInjury(fighterId) {
     if (!currentGang) return;
     let m = currentGang.members.find(x => x.id === fighterId);
@@ -1031,9 +1143,33 @@ function addFighterXP(fighterId, amount) {
 
 function adjustReputation(delta) {
     if (!currentGang) return;
-    currentGang.reputation = (currentGang.reputation || 0) + delta;
-    safeSave();
+    if (currentGang.reputation === undefined) currentGang.reputation = 1;
+
+    // Empêche la réputation de base de descendre en dessous de 1
+    currentGang.reputation = Math.max(1, currentGang.reputation + delta);
+
+    safeSave(); // Sauvegarde et met à jour le bandeau supérieur automatiquement
     renderPostBattleView(document.getElementById('main-content'));
+}
+
+// ==========================================
+// REGISTRE CENTRAL & SESSION POST-CYCLE
+// ==========================================
+let postCycleSession = {
+    assignments: {},
+    territoryUsed: {}
+};
+
+function resetPostCycleSession() {
+    postCycleSession = {
+        assignments: {},
+        territoryUsed: {}
+    };
+}
+
+function startPostCycleView(container) {
+    resetPostCycleSession();
+    renderPostCycleView(container);
 }
 
 // ==========================================
@@ -1058,8 +1194,9 @@ function renderPostCycleView(container) {
                 <h2>Séquence Post-Cycle — ${currentGang.name}</h2>
                 <button class="btn btn-cyan" onclick="openStashModal()">📦 Réserve du Gang (Stash)</button>
             </div>
-            <div style="margin-top:10px;">
+            <div style="margin-top:10px; display:flex; gap:10px;">
                 <button class="btn" onclick="safeNavigate('gang-manage')">← Retour Gestion du Gang</button>
+                <button class="btn btn-cyan" onclick="if(confirm('Réinitialiser toutes les actions et territoires pour un nouveau cycle ?')) { resetPostCycleSession(); renderPostCycleView(); }">🔄 Nouveau Cycle / Réinitialiser</button>
             </div>
             <hr style="margin: 15px 0; border-color: #333;">
 
@@ -1174,11 +1311,6 @@ function renderPostCycleView(container) {
 // ==========================================
 // REGISTRE CENTRAL DES ACTIONS POST-CYCLE (1 ACTION / GUERRIER)
 // ==========================================
-let postCycleSession = {
-    assignments: {},
-    territoryUsed: {}
-};
-
 function isFighterBusy(fId) {
     return postCycleSession.assignments[fId] || null;
 }
@@ -1928,6 +2060,29 @@ function collectAllTerritoryIncome() {
 }
 
 // 2. Traitement des options de territoires (Recrutement à prix réduit)
+// Fonction utilitaire pour ajouter un équipement directement au Stash
+// Fonction utilitaire pour ajouter un ou plusieurs équipements au Stash
+function addEquipmentToStash(itemName, defaultCost = 15, count = 1) {
+    if (!currentGang) return;
+    if (!currentGang.stash) currentGang.stash = [];
+
+    let equipDef = (typeof db !== 'undefined' && db.equipment) 
+        ? db.equipment.find(e => e.name.toLowerCase().includes(itemName.toLowerCase()) || itemName.toLowerCase().includes(e.name.toLowerCase())) 
+        : null;
+
+    let finalName = equipDef ? equipDef.name : itemName;
+    let finalCost = equipDef ? (equipDef.cost_credits || equipDef.cost || equipDef.price || defaultCost) : defaultCost;
+
+    for (let i = 0; i < count; i++) {
+        currentGang.stash.push({
+            name: finalName,
+            type: "Équipement",
+            cost: finalCost
+        });
+    }
+}
+
+// Traitement des options de territoires (Recrutement & Matériel gratuit)
 function claimTerritoryOption(terId, idx) {
     if (!currentGang) return;
     if (!postCycleSession.territoryUsed) postCycleSession.territoryUsed = {};
@@ -1937,8 +2092,30 @@ function claimTerritoryOption(terId, idx) {
     }
 
     let tDef = getTerritoryDef(terId);
-    if (!tDef || !tDef.optionType) return;
+    let terKey = (tDef ? (tDef.id || tDef.name) : terId).toLowerCase();
+    let optType = (tDef && tDef.optionType) ? tDef.optionType.toLowerCase() : '';
 
+    // A. Mine Working / Shaft -> 2 Respirateurs gratuits
+    if (optType === 'free_respirator' || optType === 'add_respirator' || terKey.includes('mine') || terKey.includes('respirat')) {
+        addEquipmentToStash('Respirateur', 15, 2);
+        postCycleSession.territoryUsed[idx] = 'option';
+        safeSave();
+        alert("2 Respirateurs ont été ajoutés à la réserve du gang !");
+        renderPostCycleView(document.getElementById('main-content'));
+        return;
+    }
+
+    // B. Promethium Cache -> 3 Combinaisons de protection gratuites
+    if (optType === 'free_hazmat' || optType === 'add_hazmat' || optType === 'free_promethium' || terKey.includes('promethium') || terKey.includes('hazmat')) {
+        addEquipmentToStash('Combinaison de protection', 15, 3);
+        postCycleSession.territoryUsed[idx] = 'option';
+        safeSave();
+        alert("3 Combinaisons de protection ont été ajoutées à la réserve du gang !");
+        renderPostCycleView(document.getElementById('main-content'));
+        return;
+    }
+
+    // C. Réductions Mercenaires & Recrutement
     const mercDiscountMap = {
         'discount_doc': { charId: 'merc_rogue_doc', discount: 30 },
         'discount_ammojack': { charId: 'merc_ammo_jack', discount: 30 },
@@ -1947,11 +2124,11 @@ function claimTerritoryOption(terId, idx) {
         'discount_runner': { charId: 'merc_dome_runner', discount: 30 }
     };
 
-    if (tDef.optionType === 'discount_ganger') {
-        let gangGangers = db.characters.filter(c => 
+    if (optType === 'discount_ganger') {
+        let gangGangers = (typeof db !== 'undefined' && db.characters) ? db.characters.filter(c => 
             !c.id.startsWith('merc_') && 
             (c.type || []).some(t => t.toLowerCase() === 'ganger')
-        );
+        ) : [];
 
         if (gangGangers.length === 0) {
             return alert("Aucun profil de Ganger trouvé dans ce gang.");
@@ -1973,15 +2150,16 @@ function claimTerritoryOption(terId, idx) {
             openModal("Choix du Ganger à recruter", html);
         }
     } 
-    else if (mercDiscountMap[tDef.optionType]) {
-        let targetInfo = mercDiscountMap[tDef.optionType];
-        let charDef = db.characters.find(c => c.id === targetInfo.charId);
+    else if (mercDiscountMap[optType]) {
+        let targetInfo = mercDiscountMap[optType];
+        let charDef = (typeof db !== 'undefined' && db.characters) ? db.characters.find(c => c.id === targetInfo.charId) : null;
         if (!charDef) return alert("Profil introuvable.");
 
         executeDiscountRecruitment(charDef, targetInfo.discount, idx);
+    } else {
+        alert("Aucune option particulière configurée pour ce territoire.");
     }
 }
-
 function executeDiscountRecruitmentById(charId, discount, territoryIdx) {
     if (typeof closeModal === 'function') closeModal();
     let charDef = db.characters.find(c => c.id === charId);
@@ -2061,4 +2239,116 @@ function openPdfModal(title, url) {
         </div>
     `;
     openModal(title, html);
+}
+
+function saveMatchToHistory() {
+    if (!currentGang) return;
+
+    // 1. Saisie des variables
+    let opponentName = document.getElementById('hist-opponent-name')?.value.trim() || 'Inconnu';
+    let opponentGang = document.getElementById('hist-opponent-gang')?.value.trim() || 'Inconnu';
+    let result = document.getElementById('hist-result')?.value || 'Égalité';
+
+    let credPrimary = parseInt(document.getElementById('hist-cred-primary')?.value) || 0;
+    let credSecondary = parseInt(document.getElementById('hist-cred-secondary')?.value) || 0;
+    let totalCredits = credPrimary + credSecondary;
+
+    let repChange = parseInt(document.getElementById('hist-rep')?.value) || 0;
+
+    let gainedTer = document.getElementById('hist-ter-gained')?.value || '';
+    let lostTerIdx = document.getElementById('hist-ter-lost')?.value;
+
+    // 2. Gestion sécurisée des territoires
+    let territorySummary = 'Aucun';
+    if (!currentGang.territories) currentGang.territories = [];
+
+    if (gainedTer !== '') {
+        currentGang.territories.push(gainedTer);
+        territorySummary = `+ ${gainedTer}`;
+    } else if (lostTerIdx !== undefined && lostTerIdx !== '') {
+        let idx = parseInt(lostTerIdx);
+        if (!isNaN(idx) && idx >= 0 && idx < currentGang.territories.length) {
+            let removed = currentGang.territories.splice(idx, 1)[0];
+            territorySummary = `- ${removed}`;
+        }
+    }
+
+    // 3. Application des crédits et de la réputation au gang
+    currentGang.credits = (currentGang.credits || 0) + totalCredits;
+    if (repChange !== 0) {
+        currentGang.reputation = Math.max(1, (currentGang.reputation || 1) + repChange);
+    }
+
+    // 4. Archivage dans l'historique
+    if (!currentGang.history) currentGang.history = [];
+    currentGang.history.push({
+        id: (typeof generateId === 'function') ? generateId() : Date.now().toString(),
+        date: new Date().toLocaleDateString('fr-FR'),
+        opponentName: opponentName,
+        opponentGang: opponentGang,
+        result: result,
+        primaryCredits: credPrimary,
+        secondaryCredits: credSecondary,
+        totalCredits: totalCredits,
+        repChange: repChange,
+        territory: territorySummary
+    });
+
+    // 5. Sauvegarde & rechargement de la vue
+    safeSave();
+    updateTopBar();
+
+    alert(`Partie enregistrée ! (${result} contre ${opponentName})`);
+    renderPostBattleView(document.getElementById('main-content'));
+}
+
+function openMatchHistoryModal() {
+    if (!currentGang) return;
+    let history = currentGang.history || [];
+
+    if (history.length === 0) {
+        return openModal("📜 Historique des Parties", "<p style='color:#888;'>Aucune partie enregistrée pour ce gang.</p>");
+    }
+
+    let html = `
+        <div style="max-height:60vh; overflow-y:auto; padding-right:5px;">
+            <table style="width:100%; border-collapse:collapse; text-align:left; font-size:12px;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--accent-purple, #9b59b6); background:#111;">
+                        <th style="padding:6px;">Date</th>
+                        <th style="padding:6px;">Adversaire</th>
+                        <th style="padding:6px; text-align:center;">Résultat</th>
+                        <th style="padding:6px; text-align:center;">Crédits</th>
+                        <th style="padding:6px; text-align:center;">Rép.</th>
+                        <th style="padding:6px;">Territoire</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+
+    history.slice().reverse().forEach(item => {
+        let resColor = item.result === 'Victoire' ? '#2ecc71' : (item.result === 'Défaite' ? '#e74c3c' : '#f1c40f');
+        let repText = (item.repChange > 0) ? `+${item.repChange}` : `${item.repChange || 0}`;
+
+        html += `
+            <tr style="border-bottom:1px solid #222;">
+                <td style="padding:6px;">${item.date}</td>
+                <td style="padding:6px;"><strong>${item.opponentName || 'Inconnu'}</strong><br><small style="color:#aaa;">${item.opponentGang || '-'}</small></td>
+                <td style="padding:6px; text-align:center; color:${resColor}; font-weight:bold;">${item.result || 'Égalité'}</td>
+                <td style="padding:6px; text-align:center; color:var(--accent-cyan, #00d2d3);">+${item.totalCredits || 0} cr</td>
+                <td style="padding:6px; text-align:center;">${repText}</td>
+                <td style="padding:6px;"><small style="color:#ddd;">${item.territory || 'Aucun'}</small></td>
+            </tr>
+        `;
+    });
+
+    html += `
+                </tbody>
+            </table>
+        </div>
+        <br>
+        <button class="btn" onclick="if (typeof closeModal==='function') closeModal()">Fermer</button>
+    `;
+
+    if (typeof openModal === 'function') openModal("📜 Historique des Parties", html);
 }
