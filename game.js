@@ -133,7 +133,7 @@ function calculateGangReputation(gang) {
     return Math.max(1, baseRep + territoryBonus);
 }
 
-function updateTopBar() {
+function updateGameTopBar() {
     const topBar = document.getElementById('top-bar');
     if (!topBar) return;
 
@@ -188,7 +188,7 @@ function setGameHeaderVisibility(inGame) {
         } else {
             topBar.classList.remove('hidden');
             topBar.style.display = 'block';
-            updateTopBar();
+            updateGameTopBar();
         }
     }
 }
@@ -196,7 +196,7 @@ function setGameHeaderVisibility(inGame) {
 function safeSave() {
     if (typeof appState !== 'undefined' && appState.isQuickMatch) return;
     if (typeof saveGangs === 'function') saveGangs();
-    updateTopBar();
+    updateGameTopBar();
 }
 
 function safeNavigate(target) {
@@ -940,7 +940,7 @@ function renderPostBattleView(container) {
         return;
     }
 
-    updateTopBar();
+    updateGameTopBar();
 
     let ooaFighters = (currentGang.members || []).filter(m => m.ooa === true);
 
@@ -1203,7 +1203,7 @@ function renderPostCycleView(container) {
         return;
     }
 
-    updateTopBar();
+    updateGameTopBar();
     if (!currentGang.territories) currentGang.territories = [];
     if (!postCycleSession.territoryUsed) postCycleSession.territoryUsed = {};
 
@@ -2364,7 +2364,7 @@ function saveMatchToHistory() {
 
     // 5. Sauvegarde & rechargement de la vue
     safeSave();
-    updateTopBar();
+    updateGameTopBar();
 
     alert(`Partie enregistrée ! (${result} contre ${opponentName})`);
     renderPostBattleView(document.getElementById('main-content'));
