@@ -5,7 +5,7 @@ let currentGameRoster = [];
 let gameTactics = [];
 
 const CUMULATIVE_CONDITIONS = [
-    "Blessé", "Folie", "Entoilé", "Redoutable", "Frénésie", "Haine", "Intoxiqué", "Terrifiant"
+    "Blessé", "Folie", "Entoilé", "Fearsome", "Frénésie", "Haine", "Intoxiqué", "Terrifying"
 ];
 
 const PERMANENT_INJURIES = [
@@ -13,7 +13,7 @@ const PERMANENT_INJURIES = [
     "+2 XP",
     "+3 XP",
     "Gagne Haine",
-    "Condition Redoutable",
+    "Condition fearsome",
     "+1 Ld",
     "Aucune conséquence",
     "Recovery (Absente prochaine partie)",
@@ -484,6 +484,25 @@ function startGame() {
         m.activated = false;
         m.suppressed = false;
         m.conditions = {};
+
+        // --- AUTOMATISATION DES CONDITIONS PERMANENTES ---
+        // 1. Vérification de la compétence Fearsome / Redoutable
+        const hasFearsomeSkill = (m.skills || []).some(s => {
+            let sName = (typeof s === 'string' ? s : (s.name || '')).toLowerCase();
+            let sId = (typeof s === 'object' && s.id) ? s.id : '';
+            return sId === 'sk_redoutable' || sName.includes('fearsome') || sName.includes('redoutable');
+        });
+
+        // 2. Vérification d'une blessure permanente Fearsome / Redoutable
+        const hasFearsomeInjury = (m.injuries || []).some(inj => {
+            let injStr = (typeof inj === 'string' ? inj : '').toLowerCase();
+            return injStr.includes('fearsome') || injStr.includes('redoutable');
+        });
+
+        // Si le combattant a la compétence ou la blessure, on coche la condition automatiquement
+        if (hasFearsomeSkill || hasFearsomeInjury) {
+            m.conditions['Fearsome'] = true; // Remplace 'Fearsome' par 'Redoutable' si c'est le nom exact dans CUMULATIVE_CONDITIONS
+        }
         
         if (m.weapons) {
             m.weapons.forEach(w => {
@@ -1589,7 +1608,7 @@ function openTradingPostSetupModal() {
     let eligibleFighters = (currentGang.members || []).filter(m => {
         let types = (m.type || []).map(t => t.toLowerCase());
         let isLeaderOrChamp = types.includes("leader") || types.includes("champion");
-        let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connecté");
+        let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connected");
         return isLeaderOrChamp || hasConnected;
     });
 
@@ -1601,13 +1620,13 @@ function openTradingPostSetupModal() {
     `;
 
     if (eligibleFighters.length === 0) {
-        html += `<p style="color:#888;">Aucun Leader, Champion ou membre avec la compétence "Connecté" disponible.</p>`;
+        html += `<p style="color:#888;">Aucun Leader, Champion ou membre avec la compétence "Connected" disponible.</p>`;
     } else {
         eligibleFighters.forEach(m => {
             let types = (m.type || []).map(t => t.toLowerCase());
             let isLeader = types.includes("leader");
             let isChampion = types.includes("champion");
-            let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connecté");
+            let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connected");
 
             let busyReason = isFighterBusy(m.id);
             let isBusyOther = busyReason && busyReason !== 'Trading Post';
@@ -1616,7 +1635,7 @@ function openTradingPostSetupModal() {
             let infoParts = [];
             if (isLeader) infoParts.push("Leader: 2 TP");
             else if (isChampion) infoParts.push("Champion: 1 TP");
-            if (hasConnected) infoParts.push("Connecté: +1 TP");
+            if (hasConnected) infoParts.push("Connected: +1 TP");
 
             html += `
                 <div style="background:#111; border:1px solid #333; padding:8px; border-radius:5px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; ${isBusyOther ? 'opacity:0.4;' : ''}">
@@ -1673,7 +1692,7 @@ function confirmTradingPostFixedTP() {
         let types = (m.type || []).map(t => t.toLowerCase());
         let isLeader = types.includes("leader");
         let isChampion = types.includes("champion");
-        let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connecté");
+        let hasConnected = (m.skills || []).some(s => (typeof s === 'string' ? s : s.name).toLowerCase() === "connected");
 
         let fighterTP = 0;
         let details = [];
@@ -1681,7 +1700,7 @@ function confirmTradingPostFixedTP() {
         if (isLeader) { fighterTP += 2; details.push("+2 TP Leader"); }
         else if (isChampion) { fighterTP += 1; details.push("+1 TP Champion"); }
 
-        if (hasConnected) { fighterTP += 1; details.push("+1 TP Connecté"); }
+        if (hasConnected) { fighterTP += 1; details.push("+1 TP Connected"); }
 
         totalTP += fighterTP;
         log.push(`${m.customName || m.charName} : ${fighterTP} TP (${details.join(', ')})`);
@@ -1701,8 +1720,15 @@ function confirmTradingPostFixedTP() {
 }
 
 function renderTradingPostView() {
-    let dbWeapons = (typeof db !== 'undefined' && db.weapons) ? db.weapons : [];
-    let dbEquip = (typeof db !== 'undefined' && db.equipment) ? db.equipment : [];
+    let dbWeapons = (typeof db !== 'undefined' && db.weapons) ? db.weapons.filter(w => 
+    !w.is_merc_weapon && 
+    !w.default_for && 
+    !w.specific_to && 
+    !w.requires_equip
+) : [];
+    let dbEquip = (typeof db !== 'undefined' && db.equipment) ? db.equipment.filter(e => 
+    !e.specific_to
+) : [];
 
     let html = `
         <div style="background:#111; padding:10px; border-radius:5px; border:1px solid var(--accent-purple); margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
@@ -2189,6 +2215,48 @@ function executeDiscountRecruitment(charDef, discount, territoryIdx) {
         });
     }
 
+  let defaultSkills = [];
+    if (charDef.starting_skill && charDef.starting_skill.trim() !== "" && !charDef.starting_skill.includes("choix") && !charDef.starting_skill.includes("selon")) {
+        const norm = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        let skillNames = charDef.starting_skill.split(/\s+et\s+|,\s*|\/\s*/i);
+
+        skillNames.forEach(rawName => {
+            let cleanRaw = rawName.trim();
+            if (!cleanRaw) return;
+
+            let normRaw = norm(cleanRaw);
+            let foundSkill = null;
+
+            if (typeof db !== 'undefined' && db.skills) {
+                for (let cat in db.skills) {
+                    let match = db.skills[cat].find(s => {
+                        let normS = norm(s.name);
+                        if (normS === normRaw) return true;
+                        if (normRaw.startsWith("leash") && normS.startsWith("leash")) return true;
+                        return false;
+                    });
+                    if (match) {
+                        foundSkill = JSON.parse(JSON.stringify(match));
+                        if (normRaw.startsWith("leash")) {
+                            foundSkill.name = cleanRaw.charAt(0).toUpperCase() + cleanRaw.slice(1);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (foundSkill) {
+                defaultSkills.push(foundSkill);
+            } else {
+                defaultSkills.push({
+                    id: "sk_start_" + (typeof generateId === 'function' ? generateId() : Math.random().toString(36).substr(2, 9)),
+                    name: cleanRaw.charAt(0).toUpperCase() + cleanRaw.slice(1),
+                    desc: "Compétence de départ"
+                });
+            }
+        });
+    }
+
     let newFighter = {
         id: generateId(),
         charId: charDef.id,
@@ -2198,7 +2266,7 @@ function executeDiscountRecruitment(charDef, discount, territoryIdx) {
         stats: JSON.parse(JSON.stringify(charDef.stats)),
         weapons: defaultWeapons,
         equipment: defaultEquip,
-        skills: [],
+        skills: defaultSkills,
         totalCost: charDef.cost
     };
 
