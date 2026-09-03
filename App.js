@@ -50,7 +50,7 @@ const db = {
             type: ["guerrier", "ganger", "spécialiste"],
             starting_xp: 13,
             starting_skill: "selon spécialité",
-            special_rules: ["Nimble", "lourd (biceps saillant), artilleur (tir à la hanche), pistolero (pistolero), scout (grimper), sniper (tir de précision), bagarreur (berserker), medic (soin), tech (munitions)"],
+            special_rules: ["Nimble", "lourd (Bulging biceps), artilleur (Hip-shooting), pistolero (Gunfighter), scout (Clamber), sniper (Precision shot), bagarreur (Berserker), medic (Medicate), tech (Munitioneer)"],
             primary_skills: ["agilité"],
             secondary_skills: ["combat", "tir"],
             cost: 40
@@ -61,7 +61,7 @@ const db = {
             stats: { M: '6"', WS: '5+', BS: '5+', S: 3, T: 3, W: 1, I: 4, A: 1, Sv: '6+', Ld: 5, Cl: 6, Wil: 5, Int: 5 },
             type: ["guerrier", "prospect"],
             starting_xp: 4,
-            starting_skill: "grimper",
+            starting_skill: "Clamber",
             special_rules: ["Nimble"],
             primary_skills: ["agilité"],
             secondary_skills: ["ruse"],
@@ -86,7 +86,7 @@ const db = {
             stats: { M: '6"', WS: '4+', BS: '4+', S: 4, T: 5, W: 4, I: 4, A: 3, Sv: '6+', Ld: 5, Cl: 6, Wil: 7, Int: 4 },
             type: ["guerrier", "bête", "brute"],
             starting_xp: 25,
-            starting_skill: "régénération",
+            starting_skill: "Regeneration",
             special_rules: ["Nimble", "Ne peut acheter armes/matériel sauf upgrade."],
             primary_skills: ["muscle"],
             secondary_skills: ["agilité"],
@@ -129,7 +129,7 @@ const db = {
         {
             id: "merc_luthern_armbot", name: "Luthern armbot",
             stats: { M: '4"', WS: '3+', BS: '5+', S: 5, T: 5, W: 3, I: 2, A: 2, Sv: '4+', Ld: 6, Cl: 8, Wil: 6, Int: 5 },
-            type: ["Guerrier", "brute"], starting_xp: 25, starting_skill: "Infiltration", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 230,
+            type: ["Guerrier", "brute"], starting_xp: 25, starting_skill: "Infiltrate", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 230,
             special_rules: ["Post cycle : travailler sur territoires possédés."], default_weapons: ["wpn_griffes_tunnel"],
             allowed_merc_weapons: [
                 { id: "wpn_armbot_grav", cost_credits: 40 },
@@ -139,7 +139,7 @@ const db = {
         {
             id: "merc_jotunn_ogryn", name: "Jotunn Ogryn",
             stats: { M: '5"', WS: '4+', BS: '5+', S: 5, T: 5, W: 3, I: 3, A: 2, Sv: '5+', Ld: 7, Cl: 8, Wil: 6, Int: 5 },
-            type: ["Guerrier", "brute"], starting_xp: 25, starting_skill: "coup de boule", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 160,
+            type: ["Guerrier", "brute"], starting_xp: 25, starting_skill: "Headbutt", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 160,
             special_rules: ["Ne peut jamais être activé en activation de groupe."], default_weapons: ["wpn_poing_augmetic", "wpn_poing_augmetic"],
             allowed_merc_weapons: [
                 { id: "wpn_arc_welder", cost_credits: 70, replaces: "wpn_poing_augmetic" },
@@ -150,7 +150,7 @@ const db = {
         {
             id: "merc_rogue_doc", name: "Rogue doc",
             stats: { M: '5"', WS: '5+', BS: '5+', S: 2, T: 3, W: 1, I: 3, A: 1, Sv: '6+', Ld: 6, Cl: 8, Wil: 6, Int: 7 },
-            type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "soin", primary_skills: ["Savant"], secondary_skills: ["Agilité"], cost: 90,
+            type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "Medicate", primary_skills: ["Savant"], secondary_skills: ["Agilité"], cost: 90,
             special_rules: ["Peut accompagner un guerrier en escorte médicale ou mise en place de bioniques."],
             default_weapons: ["wpn_stub_gun"], default_equipment: ["eq_kit_medical", "eq_medicrane"],
             allowed_merc_weapons: [
@@ -160,7 +160,7 @@ const db = {
         {
             id: "merc_ammo_jack", name: "Ammo-jack",
             stats: { M: '5"', WS: '4+', BS: '3+', S: 3, T: 3, W: 1, I: 2, A: 1, Sv: '5+', Ld: 6, Cl: 7, Wil: 7, Int: 7 },
-            type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "Munitions", primary_skills: ["Tir"], secondary_skills: ["Savant"], cost: 100,
+            type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "Munitioneer", primary_skills: ["Tir"], secondary_skills: ["Savant"], cost: 100,
             special_rules: ["Post cycle overcharge : Une arme gagne +1 S et instable."],
             default_weapons: ["wpn_epee_energetique", "wpn_pompe_combat"],
             allowed_merc_weapons: [
@@ -171,7 +171,7 @@ const db = {
         {
             id: "merc_dome_runner", name: "Dome runner",
             stats: { M: '5"', WS: '5+', BS: '5+', S: 3, T: 3, W: 1, I: 4, A: 1, Sv: '6+', Ld: 6, Cl: 7, Wil: 7, Int: 7 },
-            type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "chute de chat et grimper", primary_skills: ["Agilité"], secondary_skills: ["Ruse"], cost: 50,
+            type: ["Guerrier", "hanger-on"], starting_xp: 13, starting_skill: "Catfall, Clamber", primary_skills: ["Agilité"], secondary_skills: ["Ruse"], cost: 50,
             special_rules: ["Déploiement : D3 alliés peuvent se déplacer de leur initiative avant T1."],
             default_weapons: ["wpn_stub_gun", "wpn_couteau_combat"],
             allowed_merc_weapons: [
@@ -190,7 +190,7 @@ const db = {
         {
             id: "merc_hive_watcher", name: "Hive watcher",
             stats: { M: '4"', WS: '5+', BS: '5+', S: 3, T: 3, W: 1, I: 4, A: 1, Sv: '6+', Ld: 6, Cl: 7, Wil: 7, Int: 8 },
-            type: ["Guerrier", "hanger-on", "soutien"], starting_xp: 13, starting_skill: "se cacher et grimper", primary_skills: ["Ruse"], secondary_skills: ["Agilité"], cost: 30,
+            type: ["Guerrier", "hanger-on", "soutien"], starting_xp: 13, starting_skill: "Clamber, Lie low", primary_skills: ["Ruse"], secondary_skills: ["Agilité"], cost: 30,
             special_rules: ["Infiltration/renfort ennemis repoussés à +3\" des alliés."],
             default_weapons: ["wpn_laspistol"]
         },
@@ -203,13 +203,13 @@ const db = {
         {
             id: "merc_millisaur", name: "Millisaur",
             stats: { M: '6"', WS: '4+', BS: '5+', S: 3, T: 3, W: 2, I: 3, A: 2, Sv: '5+', Ld: 6, Cl: 6, Wil: 6, Int: 5 },
-            type: ["guerrier", "bête", "familier"], starting_xp: 13, starting_skill: "leash de 6\"", primary_skills: ["Combat"], secondary_skills: ["Agilité"], cost: 95,
+            type: ["guerrier", "bête", "familier"], starting_xp: 13, starting_skill: "Leash de 6\"", primary_skills: ["Combat"], secondary_skills: ["Agilité"], cost: 95,
             special_rules: ["Leader/champion uniquement.", "Déplacement sous infranchissable.", "Compte comme équipement"], default_weapons: ["wpn_gueule_crocs"]
         },
         {
             id: "merc_ripperjack", name: "Ripperjack",
             stats: { M: '7"', WS: '4+', BS: '6+', S: 3, T: 3, W: 2, I: 4, A: 2, Sv: '6+', Ld: 6, Cl: 8, Wil: 5, Int: 6 },
-            type: ["guerrier", "bête", "familier"], starting_xp: 13, starting_skill: "leash de 6\"", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 85,
+            type: ["guerrier", "bête", "familier"], starting_xp: 13, starting_skill: "Leash de 6\"", primary_skills: ["Muscle"], secondary_skills: ["Combat"], cost: 85,
             special_rules: ["Leader/champion uniquement.", "Ne peut assister/être assisté.", "Ennemi engagé avec test d'agilité pour fuir.", "Compte comme équipement"], default_weapons: ["wpn_dents"]
         }
     ],
@@ -217,58 +217,58 @@ const db = {
     // ===== DICTIONNAIRE DES COMPETENCES =====
     skills: {
         agilite: [
-            { id: "sk_chute_chat", name: "Chute de chat", desc: "Réduit le cran de distance verticale en cas de chute/saut. Test d'agilité pour ne pas être suppressed si non blessé/hors combat." },
-            { id: "sk_grimper", name: "Grimper", desc: "Mouvement non divisé par deux en grimpant." },
-            { id: "sk_esquive", name: "Esquive", desc: "Avant jet d'armure, sur un 6, ignore la blessure. Si gabarit, déplace de 2\" pour éviter." },
-            { id: "sk_bond_prodigieux", name: "Bond prodigieux", desc: "Ignore les 2 premiers pouces de distance lors d'un saut (saut 4\" sans test)." },
-            { id: "sk_jaillir", name: "Jaillir", desc: "Si suppressed, test d'agilité. Si réussi, n'est plus suppressed." },
+            { id: "sk_chute_chat", name: "Catfall", desc: "Réduit le cran de distance verticale en cas de chute/saut. Test d'agilité pour ne pas être suppressed si non blessé/hors combat." },
+            { id: "sk_grimper", name: "Clamber", desc: "Mouvement non divisé par deux en grimpant." },
+            { id: "sk_esquive", name: "Dodge", desc: "Avant jet d'armure, sur un 6, ignore la blessure. Si gabarit, déplace de 2\" pour éviter." },
+            { id: "sk_bond_prodigieux", name: "Mighty leap", desc: "Ignore les 2 premiers pouces de distance lors d'un saut (saut 4\" sans test)." },
+            { id: "sk_jaillir", name: "Spring up", desc: "Si suppressed, test d'agilité. Si réussi, n'est plus suppressed." },
             { id: "sk_sprint", name: "Sprint", desc: "Action double : déplacement = Mouvement + (2 x Initiative)." }
         ],
         muscle: [
-            { id: "sk_charge_taureau", name: "Charge de taureau", desc: "Attaque de charge : l'arme gagne knockback (6+) et +1 en Force." },
-            { id: "sk_biceps_saillants", name: "Biceps saillants", desc: "Braced shot : déplacement d'Initiative en pouces avant ou après. Arme lourde au close : peut déclarer arme secondaire non lourde." },
-            { id: "sk_redoutable", name: "Redoutable", desc: "Condition fearsome." },
-            { id: "sk_machoire_acier", name: "Machoire d'acier", desc: "Endurance +2 si touché par arme sans AP." },
-            { id: "sk_nerfs_acier", name: "Nerfs d'acier", desc: "Si touché au tir, test de cool : si réussi, non suppressed." },
-            { id: "sk_instoppable", name: "Instoppable", desc: "A l'activation, test de Willpower : si réussi, récupère 1 PV." }
+            { id: "sk_charge_taureau", name: "Bull charge", desc: "Attaque de charge : l'arme gagne knockback (6+) et +1 en Force." },
+            { id: "sk_biceps_saillants", name: "Bulging biceps", desc: "Braced shot : déplacement d'Initiative en pouces avant ou après. Arme lourde au close : peut déclarer arme secondaire non lourde." },
+            { id: "sk_redoutable", name: "Fearsome", desc: "Condition fearsome." },
+            { id: "sk_machoire_acier", name: "Iron jaw", desc: "Endurance +2 si touché par arme sans AP." },
+            { id: "sk_nerfs_acier", name: "Nerves of steel", desc: "Si touché au tir, test de cool : si réussi, non suppressed." },
+            { id: "sk_instoppable", name: "Unstoppable", desc: "A l'activation, test de Willpower : si réussi, récupère 1 PV." }
         ],
         combat: [
             { id: "sk_berserker", name: "Berserker", desc: "Condition frenzy." },
-            { id: "sk_maitre_combat", name: "Maitre du combat", desc: "Pas de malus d'interférence pour toucher. Peut toujours assister quel que soit le nb d'ennemis." },
-            { id: "sk_coup_boule", name: "Coup de boule", desc: "Arme intégrée : engagé, F+1, L:1, attaque additionnelle (1)." },
-            { id: "sk_coups_puissants", name: "Coups puissants", desc: "Arme lourde au close = +1 Force." },
-            { id: "sk_pluie_coups", name: "Pluie de coups", desc: "Première attaque, si tjs engagé après, attaque additionnelle gratuite." },
-            { id: "sk_combat_2_armes", name: "Combat à deux armes", desc: "Fait 2 attaques avec son arme secondaire au lieu d'une." }
+            { id: "sk_maitre_combat", name: "Combat master", desc: "Pas de malus d'interférence pour toucher. Peut toujours assister quel que soit le nb d'ennemis." },
+            { id: "sk_coup_boule", name: "Headbutt", desc: "Arme intégrée : engagé, F+1, L:1, attaques additionnelles (1)." },
+            { id: "sk_coups_puissants", name: "Heavy blows", desc: "Arme lourde au close = +1 Force." },
+            { id: "sk_pluie_coups", name: "Rain of blows", desc: "Si après une action d'attaque, le guerrier est toujours engagé, peut faire une action d'attaque gratuite en plus." },
+            { id: "sk_combat_2_armes", name: "Two-weapon fighter", desc: "Fait 2 attaques avec son arme secondaire au lieu d'une." }
         ],
         ruse: [
             { id: "sk_backstab", name: "Backstab", desc: "Armes close gagnent Backstab. Si déjà acquis, Force +2 au lieu de +1." },
-            { id: "sk_contre_attaque", name: "Contre attaque", desc: "Peut faire une attaque additionnelle quand un ennemi l'attaque, au même rang d'initiative." },
-            { id: "sk_coupe_gorge", name: "Coupe gorge", desc: "Relance son D6 de coup de grâce." },
-            { id: "sk_infiltration", name: "Infiltration", desc: "Déploiement spécial : hors ligne de vue et à + de 9\" de tout ennemi." },
-            { id: "sk_se_cacher", name: "Se cacher", desc: "Si suppressed, inciblable au-delà de la portée courte des ennemis." },
+            { id: "sk_contre_attaque", name: "Counter-attack", desc: "Peut faire une attaque additionnelle quand un ennemi l'attaque, au même rang d'initiative que lui." },
+            { id: "sk_coupe_gorge", name: "Cut-throat", desc: "Relance son D6 de coup de grâce." },
+            { id: "sk_infiltration", name: "Infiltrate", desc: "Déploiement spécial : hors ligne de vue et à + de 9\" de tout ennemi." },
+            { id: "sk_se_cacher", name: "Lie low", desc: "Si suppressed, inciblable au-delà de la portée courte des ennemis." },
             { id: "sk_overwatch", name: "Overwatch", desc: "Interrompt une action ennemie avec un tir en perdant son marqueur ready." }
         ],
         savant: [
-            { id: "sk_connecte", name: "Connecté", desc: "Visite le Trading Post avec 1 TP supplémentaire post-cycle (2 visites max)." },
-            { id: "sk_recharge_rapide", name: "Recharge rapide", desc: "Recharge toutes ses armes d'un coup." },
-            { id: "sk_volonte_fer", name: "Volonté de fer", desc: "Soustrait 1 aux tests de bottle check du gang." },
-            { id: "sk_soin", name: "Soin", desc: "Action : un allié à 1\" seriously injured récupère 1 PV." },
+            { id: "sk_connecte", name: "Connected", desc: "Visite le Trading Post avec 1 TP supplémentaire post-cycle (2 visites max)." },
+            { id: "sk_recharge_rapide", name: "Fast reload", desc: "Recharge toutes ses armes d'un coup." },
+            { id: "sk_volonte_fer", name: "Iron will", desc: "Soustrait 1 aux tests de bottle check du gang." },
+            { id: "sk_soin", name: "Medicate", desc: "Action : un allié à 1\" qui n'est pas seriously injured récupère 1 PV." },
             { id: "sk_mentor", name: "Mentor", desc: "Si un allié à 6\" gagne 1 XP, test de Ld : si réussi, gagne 1 XP." },
-            { id: "sk_munitions", name: "Munitions", desc: "Action distribution : alliés à 6\" font test d'Int, si réussi -> recharge gratuite." }
+            { id: "sk_munitions", name: "Munitioneer", desc: "Action distribution : alliés à 6\" font test d'Int, si réussi -> recharge gratuite." }
         ],
         tir: [
-            { id: "sk_tir_rapide", name: "Tir rapide", desc: "Peut faire 2 actions de tir pendant l'activation." },
-            { id: "sk_pistolero", name: "Pistolero", desc: "Peut tirer avec 2 armes de tir (léger) sur cibles différentes." },
-            { id: "sk_tir_hanche", name: "Tir à la hanche", desc: "Les armes de tir (non lourdes) gagnent le trait assaut." },
-            { id: "sk_tireur_habile", name: "Tireur habile", desc: "+1 pour toucher les cibles entre portée courte et longue." },
-            { id: "sk_tir_precision", name: "Tir de précision", desc: "Sur un 6 naturel pour toucher, ignore l'armure (sauf explosion/tir rapide)." },
-            { id: "sk_tireur_elite", name: "Tireur d'élite", desc: "Aimed shot : +2 pour toucher au lieu de +1." }
+            { id: "sk_tir_rapide", name: "Fast shot", desc: "Peut faire 2 actions de tir pendant l'activation." },
+            { id: "sk_pistolero", name: "Gunfighter", desc: "Peut tirer avec 2 armes de tir (léger) sur cibles différentes." },
+            { id: "sk_tir_hanche", name: "Hip-shooting", desc: "Les armes de tir (non lourdes) gagnent le trait assaut." },
+            { id: "sk_tireur_habile", name: "Marksman", desc: "+1 pour toucher les cibles entre portée courte et longue." },
+            { id: "sk_tir_precision", name: "Precision shot", desc: "Sur un 6 naturel pour toucher, ignore l'armure (sauf explosion/tir rapide)." },
+            { id: "sk_tireur_elite", name: "Sharpshooter", desc: "Aimed shot : +2 pour toucher au lieu de +1." }
         ],
         generique: [
             { id: "sk_hit_run", name: "Hit & run", desc: "Après action de combat, peut consolider (sortir de 1\") en finissant à +1\" des ennemis." },
-            { id: "sk_inspirant", name: "Inspirant", desc: "Peut faire une action gratuite d'activation de groupe." },
+            { id: "sk_inspirant", name: "Inspiring", desc: "Peut faire une action gratuite d'activation de groupe." },
             { id: "sk_juggernaut", name: "Juggernaut", desc: "Si touché au tir, suppressed uniquement si PV perdu ou effet du dé de blessure." },
-            { id: "sk_regeneration", name: "Régénération", desc: "Action : mouvement puis 4+ = récupère 1 PV." },
+            { id: "sk_regeneration", name: "Regeneration", desc: "Action : mouvement puis 4+ = récupère 1 PV." },
             { id: "sk_leash", name: "Leash de X\"", desc: "Portée pour familiers pour ignorer le test de panique." }
         ]
     },
@@ -430,7 +430,7 @@ const db = {
     weapon_traits: [
         { id: "trait_arc", name: "Arc (X)", desc: "Une arme avec ce trait a un champ de tir limité, indiqué par X" },
         { id: "trait_assaut", name: "Assaut", desc: "après que l'utilisateur a fait une action de dash, il peut tirer en action gratuite." },
-        { id: "trait_attaques_add", name: "Attaques additionnels (X)", desc: "l'arme peut faire X attaques supplémentaires en plus des attaques normales. Uniquement pendant l'activation et si l'arme n'est pas choisie comme arme primaire ou secondaire" },
+        { id: "trait_attaques_add", name: "Attaques additionnelles (X)", desc: "l'arme peut faire X attaques supplémentaires en plus des attaques normales. Uniquement pendant l'activation et si l'arme n'est pas choisie comme arme primaire ou secondaire" },
         { id: "trait_attirer", name: "Attirer", desc: "Si une figurine est touchée par une arme ayant ce trait mais pas mise hors de combat, l'attaquant peut essayer de l'attirer. Il lance un D6, et si cela dépasse la force de la cible, elle est attirée de D3\". Si elle rencontre une autre figurine, elle est attirée aussi. Si la cible finit dans les 1\" d'un de ses ennemis, elle est déplacée pour être engagée avec lui." },
         { id: "trait_auxilliaire", name: "Auxilliaire", desc: "Une arme avec ce trait ne peut qu'être attaché à une autre arme et jamais prise seule. Elle n'utilise pas d'emplacement d'arme." },
         { id: "trait_backstab", name: "Backstab", desc: "Cette arme gagne +1 en force si l'adversaire est engagé avec plus d'un ennemI." },
@@ -482,7 +482,7 @@ const db = {
         { id: "tac_hidden_stash", name: "Hidden stash", timing: "Quand un guerrier s'active, avant ses actions", effect: "Pendant son activation, ce guerrier peut faire gratuitement une action de recharge." },
         { id: "tac_suppressing_fire", name: "Suppressing fire", timing: "Quand un guerrier tire", effect: "La cible est suppressed même si elle n'est pas touchée. Les compétences ne peuvent empêcher le suppressed." },
         { id: "tac_burst_of_courage", name: "Burst of courage", timing: "Avant de faire un bottle check", effect: "Le test est automatiquement réussi." },
-        { id: "tac_adrenaline_surge", name: "Adrenaline surge", timing: "Quand un guerrier s'active, avant ses actions", effect: "Le guerrier peut faire une action additionnelle." },
+        { id: "tac_adrenaline_surge", name: "Adrenaline surge", timing: "Quand un guerrier s'active, avant ses actions", effect: "Le guerrier peut faire une action supplémentaire." },
         { id: "tac_desperate_effort", name: "Desperate effort", timing: "Juste avant de choisir quel guerrier va s'activer", effect: "Activer le guerrier comme s'il avait un marqueur prêt. À la fin de son activation, il est suppressed et subit une blessure qu'on ne peut sauvegarder ou empêcher." },
         { id: "tac_grenade_bouquet", name: "Grenade bouquet", timing: "Quand un guerrier tire avec une grenade ayant le trait explosion", effect: "Le guerrier résout 3 attaques ciblant le même ennemi. Elles dévient toutes et l'arme devient à court de munitions." },
         { id: "tac_quick_finish", name: "Quick finish", timing: "Quand un guerrier s'active, avant ses actions", effect: "Le guerrier peut faire un coup de grâce en action gratuite." },
@@ -523,12 +523,12 @@ const db = {
 
     // ===== CONDITIONS =====
     conditions: {
-        "Redoutable": "Losqu'il est pris pour cible d'une attaque de corps à corps, l'attaquant fait un jet de Wil. En cas d'échec, sa WS passe à 6+. Les guerriers fearsome ne sont pas affectés, sauf si la cible est terrifying",
+        "Fearsome": "Losqu'il est pris pour cible d'une attaque de corps à corps, l'attaquant fait un jet de Wil. En cas d'échec, sa WS passe à 6+. Les guerriers fearsome ne sont pas affectés, sauf si la cible est terrifying",
         "Frénésie": "Le guerrier doit déclarer une charge s'il commence son activation à son M + 6\" d'un ennemi. Il devrai charger l'ennemi le plus proche. Ils gagnent +1A",
         "Haine": "Quand le guerrier engage, charge ou est la cible des ces actions par une figurine haïe, elle peut relancer les jets pour toucher ratés.",
         "Blessé": "Le guerrier perd toutes ses compétences jusqu'à ce qu'il récupère un point de vie",
         "Intoxiqué": "Le guerrier baisse de 1 ses WS et BS, mais augmente son cool de 1",
-        "Terrifiant": "A les mêmes avantages qu'un guerrier fearsome. De plus, pour charger ou engager ce guerrier, il faut réussir un test Will. En cas d'échec, l'attaquant reste sur place. Ce guerrier n'est affecté ni par fearsome, ni par terrifying.",
+        "Terrifying": "A les mêmes avantages qu'un guerrier fearsome. De plus, pour charger ou engager ce guerrier, il faut réussir un test Will. En cas d'échec, l'attaquant reste sur place. Ce guerrier n'est affecté ni par fearsome, ni par terrifying.",
         "Entoilé": "Le guerrier ne peut plus sé déplacer, ni être déplacé et il subit un -1 à tous ses jets pour toucher. A la fon de son activation, il peut faire un test de force qui le libère de la condition s'il est réussi.",
         "Folie": "Quand un guerrier atteint de folie s'active, jeter un dé sur le tableau de folie pour voir comment il va agir. A la fin de son activation, il faut faire un jet de Will sui s'il est réussi, annule la condition folie"
     }
@@ -793,18 +793,44 @@ function selectRecruitProfile(charId) {
     const char = db.characters.find(c => c.id === charId);
     if (!char) return;
 
-    let initSkills = [];
+  let initSkills = [];
     if (char.starting_skill && char.starting_skill.trim() !== "" && !char.starting_skill.includes("choix") && !char.starting_skill.includes("selon")) {
-        let match = null;
-        for (let cat in db.skills) {
-            let found = db.skills[cat].find(s => s.name.toLowerCase() === char.starting_skill.toLowerCase());
-            if (found) { match = JSON.parse(JSON.stringify(found)); break; }
-        }
-        if (match) {
-            initSkills.push(match);
-        } else {
-            initSkills.push({ id: "sk_start_" + generateId(), name: char.starting_skill, desc: "Compétence de départ" });
-        }
+        const norm = str => str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+        let skillNames = char.starting_skill.split(/\s+et\s+|,\s*|\/\s*/i);
+
+        skillNames.forEach(rawName => {
+            let cleanRaw = rawName.trim();
+            if (!cleanRaw) return;
+
+            let normRaw = norm(cleanRaw);
+            let foundSkill = null;
+
+            for (let cat in db.skills) {
+                let match = db.skills[cat].find(s => {
+                    let normS = norm(s.name);
+                    if (normS === normRaw) return true;
+                    if (normRaw.startsWith("leash") && normS.startsWith("leash")) return true;
+                    return false;
+                });
+                if (match) {
+                    foundSkill = JSON.parse(JSON.stringify(match));
+                    if (normRaw.startsWith("leash")) {
+                        foundSkill.name = cleanRaw.charAt(0).toUpperCase() + cleanRaw.slice(1);
+                    }
+                    break;
+                }
+            }
+
+            if (foundSkill) {
+                initSkills.push(foundSkill);
+            } else {
+                initSkills.push({
+                    id: "sk_start_" + generateId(),
+                    name: cleanRaw.charAt(0).toUpperCase() + cleanRaw.slice(1),
+                    desc: "Compétence de départ"
+                });
+            }
+        });
     }
 
     let initWeapons = [];
