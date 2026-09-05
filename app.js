@@ -325,7 +325,7 @@ const db = {
         { id: "wpn_pistolet_web", name: "Pistolet web", profiles: [{ name: "Unique", SR: "T", LR: "-", S: 4, AP: "-", L: "-", traits: "munitions (6+), toile, gabarit, léger" }], cost_credits: 50, cost_tp: 3, is_gang_weapon: false, is_hive_scum: false },
         { id: "wpn_grenade_explo", name: "Grenade explosive", profiles: [{ name: "Unique", SR: "-", LR: '6"', S: 5, AP: "-1", L: 2, traits: "Munitions (5+), explosion (5\"), limité, Knockback (5+)" }], cost_credits: 60, cost_tp: 2, is_gang_weapon: false, is_hive_scum: false, counts_as_equip: true },
         { id: "wpn_grenade_gaz", name: "Grenade à gaz asphyxiant", profiles: [{ name: "Unique", SR: "-", LR: '9"', S: "-", AP: "-", L: 1, traits: "Munitions (5+), explosion (3\"), limité, Gaz, toxine (3)" }], cost_credits: 45, cost_tp: 1, is_gang_weapon: true, is_hive_scum: false, counts_as_equip: true },
-        { id: "wpn_charge_demo", name: "Charge de démolition", profiles: [{ name: "Unique", SR: "-", LR: '6"', S: 6, AP: "-3", L: 3, traits: "Munitions (6+), explosion (5\"), limité, Dommage (2)" }], cost_credits: 85, cost_tp: 3, is_gang_weapon: false, is_hive_scum: false, counts_as_equip: true },
+        { id: "wpn_charge_demo", name: "Charge de démolition", profiles: [{ name: "Unique", SR: "-", LR: '6"', S: 6, AP: "-3", L: 3, traits: "Munitions (6+), explosion (5\"), limité, Dommages (2)" }], cost_credits: 85, cost_tp: 3, is_gang_weapon: false, is_hive_scum: false, counts_as_equip: true },
         { id: "wpn_grenade_frag", name: "Grenade frag", profiles: [{ name: "Unique", SR: "-", LR: '9"', S: 3, AP: "-", L: 1, traits: "Munitions (4+), explosion (3\"), limité, Knockback (6+)" }], cost_credits: 30, cost_tp: 0, is_gang_weapon: true, is_hive_scum: true, counts_as_equip: true },
         { id: "wpn_grenade_inc", name: "Grenade incendiaire", profiles: [{ name: "Unique", SR: "-", LR: '9"', S: 3, AP: "-", L: 1, traits: "Munitions (5+), explosion (5\"), limité, flammes (5+)" }], cost_credits: 40, cost_tp: 2, is_gang_weapon: false, is_hive_scum: false, counts_as_equip: true },
         { id: "wpn_grenade_krak", name: "Grenade krak", profiles: [{ name: "Unique", SR: "-", LR: '9"', S: 6, AP: "-2", L: 1, traits: "Munitions (4+), limité" }], cost_credits: 45, cost_tp: 1, is_gang_weapon: true, is_hive_scum: true, counts_as_equip: true },
@@ -338,12 +338,12 @@ const db = {
         // Corps à Corps / Melee
         { id: "wpn_hache_tron", name: "Hache tronçonneuse", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 1, traits: "Melee, déchiqueter (5+)" }], cost_credits: 20, cost_tp: 1, is_gang_weapon: false, is_hive_scum: true },
         { id: "wpn_epee_tron", name: "Epée tronçonneuse", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 1, traits: "Melee, déchiqueter (5+), parade" }], cost_credits: 20, cost_tp: 1, is_gang_weapon: true, is_hive_scum: true },
-        { id: "wpn_hache_nrj", name: "Hache énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-3", L: 1, traits: "Melee, brèche (5+)" }], cost_credits: 40, cost_tp: 1, is_gang_weapon: false, is_hive_scum: false },
-        { id: "wpn_gantelet_nrj", name: "Gantelet énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S+3", AP: "-3", L: 2, traits: "Melee, brèche (6+), Dommage (2), commotion (5+), encombrant" }], cost_credits: 105, cost_tp: 3, is_gang_weapon: false, is_hive_scum: false },
-        { id: "wpn_marteau_nrj", name: "Marteau énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 2, traits: "Melee, brèche (6+), commotion (6+)" }], cost_credits: 40, cost_tp: 2, is_gang_weapon: false, is_hive_scum: false },
-        { id: "wpn_couteau_nrj", name: "Couteau énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 1, traits: "Melee, brèche (6+), backstab" }], cost_credits: 30, cost_tp: 1, is_gang_weapon: false, is_hive_scum: false },
-        { id: "wpn_masse_nrj", name: "Masse énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S+1", AP: "-2", L: 1, traits: "Melee, brèche (6+), commotion (6+)" }], cost_credits: 45, cost_tp: 1, is_gang_weapon: false, is_hive_scum: false },
-        { id: "wpn_epee_nrj", name: "Epée énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 1, traits: "melee, brèche (6+), parade" }], cost_credits: 40, cost_tp: 2, is_gang_weapon: true, is_hive_scum: false },
+        { id: "wpn_hache_nrj", name: "Hache énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-3", L: 1, traits: "Melee, breche (5+)" }], cost_credits: 40, cost_tp: 1, is_gang_weapon: false, is_hive_scum: false },
+        { id: "wpn_gantelet_nrj", name: "Gantelet énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S+3", AP: "-3", L: 2, traits: "Melee, breche (6+), Dommages (2), commotion (5+), encombrant" }], cost_credits: 105, cost_tp: 3, is_gang_weapon: false, is_hive_scum: false },
+        { id: "wpn_marteau_nrj", name: "Marteau énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 2, traits: "Melee, breche (6+), commotion (6+)" }], cost_credits: 40, cost_tp: 2, is_gang_weapon: false, is_hive_scum: false },
+        { id: "wpn_couteau_nrj", name: "Couteau énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 1, traits: "Melee, breche (6+), backstab" }], cost_credits: 30, cost_tp: 1, is_gang_weapon: false, is_hive_scum: false },
+        { id: "wpn_masse_nrj", name: "Masse énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S+1", AP: "-2", L: 1, traits: "Melee, breche (6+), commotion (6+)" }], cost_credits: 45, cost_tp: 1, is_gang_weapon: false, is_hive_scum: false },
+        { id: "wpn_epee_nrj", name: "Epée énergétique", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-2", L: 1, traits: "melee, breche (6+), parade" }], cost_credits: 40, cost_tp: 2, is_gang_weapon: true, is_hive_scum: false },
         { id: "wpn_hache", name: "Hache", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-1", L: 1, traits: "Melee" }], cost_credits: 15, cost_tp: 0, is_gang_weapon: false, is_hive_scum: true },
         { id: "wpn_couteau_combat", name: "Couteau de combat", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 1, traits: "Melee, backstab" }], cost_credits: 5, cost_tp: 0, is_gang_weapon: true, is_hive_scum: true },
         { id: "wpn_fleau", name: "Fléau", profiles: [{ name: "Unique", SR: "E", LR: "-", S: "S", AP: "-", L: 1, traits: "Melee, Knockback (6+)" }], cost_credits: 10, cost_tp: 0, is_gang_weapon: false, is_hive_scum: true },
@@ -436,12 +436,12 @@ const db = {
         { id: "trait_backstab", name: "Backstab", desc: "Cette arme gagne +1 en force si l'adversaire est engagé avec plus d'un ennemI." },
         { id: "trait_belier", name: "Bélier", desc: "une arme avec ce trait ne peut être utilisée que lors d'une charge." },
         { id: "trait_bouclier", name: "Bouclier", desc: "Si la figurine est équipé avec au moins une arme ayant ce trait, elle augmente sa sauvegarde de 1 contre les tirs." },
-        { id: "trait_breche", name: "Brèche (X+)", desc: "Si le jet de blessure donne X ou +, il ne peut y avoir de jet d'armure." },
+        { id: "trait_breche", name: "Breche (X+)", desc: "Si le jet de blessure donne X ou +, il ne peut y avoir de jet d'armure." },
         { id: "trait_combi", name: "Combi", desc: "Quand on tire avec cette arme, le personnage peut choisir quel profil il utilise. Il peut aussi tirer avec les deux, mais avec une pénalité de -1 pour toucher." },
         { id: "trait_commotion", name: "Commotion (X+)", desc: "Si l'attaquant blesse son adversaire et que le jet de blessure est de X ou +, l'initiative de la cible baisse de 1 jusqu'à la fin de sa prochaine activation." },
         { id: "trait_dechiqueter", name: "Déchiqueter (X+)", desc: "Lors du jet de blessure avec cette arme, si le résultat est de X ou +, la léthalité de l'arme augmente de 1." },
         { id: "trait_dechirant", name: "Déchirant (X+)", desc: "Si le jet naturel d'une blessure avec cette arme est X ou plus, augmenter l'AP de 1." },
-        { id: "trait_dommage", name: "Dommage (X)", desc: "Si un guerrier est blessé par cette arme, il perd X PV au lieu d'un. S'il faut faire un jet de dé de blessure, on ne lance que la léthalité de cette arme, quel que soit le nombre de PV perdu." },
+        { id: "trait_dommages", name: "Dommages (X)", desc: "Si un guerrier est blessé par cette arme, il perd X PV au lieu d'un. S'il faut faire un jet de dé de blessure, on ne lance que la léthalité de cette arme, quel que soit le nombre de PV perdu." },
         { id: "trait_encombrant", name: "Encombrant", desc: "Au corps à corps, les attaques avec cette arme se font avec une initiative de 1." },
         { id: "trait_explosion", name: "Explosion (3\"/5\")", desc: "Placer ule gabarit correspondant sur la cible du tir. Si la touche rate, le gabarit se déplace de D6\" dans la direction indiquée par le dé de dispersion. Si le dé de dispersion indique un hit et le dé une valeur de 1, le tir est annulé. Si l'arme a tir rapide, les touches supplémentaires font une dispersion centrée sur le premier gabarit." },
         { id: "trait_fiable", name: "Fiable", desc: "Une arme avec ce trait ignore le premier résultat à court de munitions obtenu à chaque round." },
@@ -561,19 +561,21 @@ function calculateFighterCost(m) {
     let total = char.cost;
     
     (m.weapons || []).forEach(w => {
+        if (!w) return;
         const isDefault = w.isDefault || (char.default_weapons && (char.default_weapons.includes(w.id) || char.default_weapons.includes(w.name)));
         if (!isDefault) {
-            total += (w.cost_credits || 0);
+            total += (w.cost_credits || w.cost || 0);
         }
-        if (w.accessory && !w.accessory.isDefault) {
-            total += (w.accessory.cost_credits || 0);
+        if (w.accessory && typeof w.accessory === 'object' && !w.accessory.isDefault) {
+            total += (w.accessory.cost_credits || w.accessory.cost || 0);
         }
     });
     
     (m.equipment || []).forEach(e => {
+        if (!e) return;
         const isDefault = e.isDefault || (char.default_equipment && (char.default_equipment.includes(e.id) || char.default_equipment.includes(e.name)));
         if (!isDefault) {
-            total += (e.cost_credits || 0);
+            total += (e.cost_credits || e.cost || 0);
         }
     });
     
@@ -592,15 +594,54 @@ function calculateGangRating(gang) {
 }
 
 function updateTopBar() {
-    if (currentGang) {
-        document.getElementById('header-gang-name').innerText = currentGang.name;
-        document.getElementById('ui-credits').innerText = currentGang.credits;
-        document.getElementById('ui-rating').innerText = calculateGangRating(currentGang);
-        document.getElementById('header-credits-rating').classList.remove('hidden');
-    } else {
-        document.getElementById('header-gang-name').innerText = "Escher Builder";
-        document.getElementById('header-credits-rating').classList.add('hidden');
+    const topBar = document.getElementById('top-bar');
+    if (!topBar) return;
+
+    if (typeof currentGang === 'undefined' || !currentGang) {
+        topBar.innerHTML = '';
+        topBar.style.display = 'none';
+        return;
     }
+
+    topBar.style.display = 'block';
+    topBar.classList.remove('hidden');
+
+    // 1. Calcul du Gang Rating (somme des combattants + équipements équipés)
+    let gangRating = typeof calculateGangRating === 'function' 
+        ? calculateGangRating(currentGang) 
+        : (currentGang.members || []).reduce((sum, m) => sum + (m.totalCost || m.cost || 0), 0);
+
+    // 2. Valeur des objets dans le Stash
+    let stashVal = (currentGang.stash || []).reduce((sum, item) => {
+        let itemCost = (typeof item === 'object') ? (item.cost || item.cost_credits || item.price || 0) : 0;
+        return sum + itemCost;
+    }, 0);
+
+    // 3. Richesse totale = Gang Rating + Stash
+    let gangWealth = gangRating + stashVal;
+
+    // 4. Réputation (base + bonus territoires)
+    let totalRep = typeof calculateGangReputation === 'function' 
+        ? calculateGangReputation(currentGang) 
+        : ((currentGang.reputation !== undefined) ? currentGang.reputation : 1);
+
+    // 5. Structure HTML complète identique sur tous les écrans hors partie
+    topBar.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:6px 15px; background:var(--panel-bg, #1e1e1e); border-bottom:1px solid #333; box-sizing:border-box; color:#fff; font-size:13px;">
+            <div>
+                <strong>${(currentGang.name || 'Gang').toUpperCase()}</strong> | 
+                CRÉDITS : <strong style="color:#f39c12;">${currentGang.credits || 0} CR</strong> | 
+                GANG RATING : <strong style="color:var(--accent-purple, #9b59b6);">${gangRating} CR</strong> | 
+                RICHESSE : <strong style="color:#f39c12;">${gangWealth} CR</strong> | 
+                RÉPUTATION : <strong style="color:#2ecc71;">${totalRep}</strong>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openStashModal()">📦 RÉSERVE (STASH)</button>
+                <button class="btn" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openTerritoriesModal()">🚩 TERRITOIRES</button>
+                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openMatchHistoryModal()">📜 HISTORIQUE</button>
+            </div>
+        </div>
+    `;
 }
 
 // ==========================================
@@ -699,8 +740,12 @@ function loadGang(name) {
 // GESTION ET AFFICHAGE DU GANG
 // ==========================================
 function renderGangManage(container) {
+    if (!container) container = document.getElementById('main-content');
+    if (!container) return;
+
     calculateGangRating(currentGang);
     updateTopBar();
+    // ... reste de la fonction inchangé
 
     const statKeys = ['M', 'WS', 'BS', 'S', 'T', 'W', 'I', 'A', 'Sv', 'Ld', 'Cl', 'Wil', 'Int'];
 
@@ -899,7 +944,7 @@ function renderFighterEdit(container) {
                 ${m.weapons.length === 0 ? '<p>Aucune arme.</p>' : m.weapons.map((w, i) => `
                     <div style="margin:8px 0; background:#181818; padding:8px; border-radius:4px;">
                         • <strong>${w.name}</strong> (${w.cost_credits||0}c)
-                        ${w.accessory ? `<br><small style="color:var(--accent-cyan); margin-left:15px;">↳ Accessoire : ${w.accessory.name} (${w.accessory.cost_credits}c) ${!isBeast && (!isMerc || isHiveScum) ? `<button class="btn-danger" style="padding:2px 6px; font-size:10px;" onclick="removeWeaponAccessory(${i})">Retirer accessoire</button>` : ''}</small>` : (!isBeast && (!isMerc || isHiveScum) ? `<br><button style="padding:2px 6px; font-size:11px; margin-left:15px;" onclick="openWeaponAccessoryModal(${i})">+ Ajouter un accessoire</button>` : '')}
+                        ${w.accessory ? `<br><small style="color:var(--accent-cyan); margin-left:15px;">↳ Accessoire : ${w.accessory.name} ${w.accessory.fromStash ? '<span style="color:#2ecc71;">(Réserve - 0c déduit)</span>' : `(${w.accessory.cost_credits||0}c)`} ${!isBeast && (!isMerc || isHiveScum) ? `<button class="btn-danger" style="padding:2px 6px; font-size:10px; margin-left:5px;" onclick="removeWeaponAccessory(${i})">Retirer accessoire</button>` : ''}</small>` : (!isBeast && (!isMerc || isHiveScum) ? `<br><button style="padding:2px 6px; font-size:11px; margin-left:15px;" onclick="openWeaponAccessoryModal(${i})">+ Ajouter un accessoire</button>` : '')}
                         <button class="btn-danger" style="float:right; padding:2px 6px; font-size:11px;" onclick="removeWeapon(${i})">Supprimer l'arme</button>
                         <div style="clear:both;"></div>
                     </div>
@@ -910,7 +955,7 @@ function renderFighterEdit(container) {
             <h3 style="margin-top:15px;">Armures & Équipements</h3>
             <div id="equip-list">
                 ${m.equipment.length === 0 ? '<p>Aucun équipement.</p>' : m.equipment.map((e, i) => `
-                    <div style="margin:5px 0;">• ${e.name} (${e.cost_credits||0}c) <button class="btn-danger" onclick="removeEquipment(${i})">X</button></div>
+                    <div style="margin:5px 0;">• ${e.name} ${e.fromStash ? '<span style="color:#2ecc71;">(Réserve)</span>' : `(${e.cost_credits||0}c)`} <button class="btn-danger" onclick="removeEquipment(${i})">X</button></div>
                 `).join('')}
             </div>
             <button onclick="openEquipSelectModal()">+ Ajouter Armure / Équipement</button>
@@ -919,7 +964,7 @@ function renderFighterEdit(container) {
     if (isHiveScum) {
         html += `<p style="color:var(--accent-purple); font-size:12px; margin-top:5px;">💡 Hive Scum : peut sélectionner uniquement le matériel compatible Hive Scum (60 cr max au total).</p>`;
     } else if (isBeast || isMerc) {
-        html += `<p style="color:#aaa; font-size:12px; margin-top:5px;">💡 Les options proposées sont strictly filtrées selon les spécificités de ce profil.</p>`;
+        html += `<p style="color:#aaa; font-size:12px; margin-top:5px;">💡 Les options proposées sont strictement filtrées selon les spécificités de ce profil.</p>`;
     }
 
     html += `
@@ -932,9 +977,9 @@ function renderFighterEdit(container) {
             ${!isBeast && !isMerc ? `<button onclick="openSkillModal()">Gérer les Compétences</button>` : ''}
 
             <hr style="margin:20px 0; border-color:var(--border-color);">
-            <p><strong>Coût Total du Combattant : ${m.totalCost} crédits</strong></p>
+            <p><strong>Valeur du Combattant (Rating) : ${m.totalCost} crédits</strong></p>
             <button onclick="saveFighter()">Valider et Enregistrer</button>
-            <button class="btn-danger" onclick="navigate('gang-manage')">Annuler</button>
+            <button class="btn-danger" onclick="cancelFighterEdit()">Annuler</button>
         </div>
     `;
     container.innerHTML = html;
@@ -1166,6 +1211,157 @@ function removeWeapon(idx) {
     renderFighterEdit(document.getElementById('main-content'));
 }
 
+function cancelFighterEdit() {
+    if (tempFighter && currentGang) {
+        let origFighter = (appState.editTarget !== null && currentGang.members[appState.editTarget]) ? currentGang.members[appState.editTarget] : null;
+        if (!currentGang.stash) currentGang.stash = [];
+
+        // 1. Remet en réserve les armes prélevées dans le Stash
+        (tempFighter.weapons || []).forEach(w => {
+            let wasOnOrig = origFighter && (origFighter.weapons || []).some(ow => ow.name === w.name);
+            if (w.fromStash && !wasOnOrig) {
+                currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost_credits || w.cost || 0 });
+            }
+            // Remet en réserve les accessoires d'armes prélevés
+            if (w.accessory) {
+                let wasAccOnOrig = origFighter && (origFighter.weapons || []).some(ow => ow.accessory && ow.accessory.name === w.accessory.name);
+                if (w.accessory.fromStash && !wasAccOnOrig) {
+                    currentGang.stash.push({ name: w.accessory.name, type: "Accessoire", cost: w.accessory.cost_credits || w.accessory.cost || 0 });
+                }
+            }
+        });
+
+        // 2. Remet en réserve les armures et équipements prélevés dans le Stash
+        (tempFighter.equipment || []).forEach(e => {
+            let wasOnOrig = origFighter && (origFighter.equipment || []).some(oe => oe.name === e.name);
+            if (e.fromStash && !wasOnOrig) {
+                currentGang.stash.push({ name: e.name, type: e.type || "Équipement", cost: e.cost_credits || e.cost || 0 });
+            }
+        });
+
+        saveGangs();
+    }
+    navigate('gang-manage');
+}
+
+// ==========================================
+// GESTION DES ACCESSOIRES D'ARMES
+// ==========================================
+function openWeaponAccessoryModal(weaponIdx) {
+    const weapon = tempFighter.weapons[weaponIdx];
+    if (!weapon) return;
+
+    let html = `<p>Arme concernée : <strong>${weapon.name}</strong></p><br>`;
+    const isCampaign = currentGang && currentGang.isEstablished;
+    let isMercOrBeast = isMercOrBeastProfile(tempFighter);
+    let isHiveScum = tempFighter.charId === "merc_hive_scum";
+
+    if (!currentGang.stash) currentGang.stash = [];
+
+    // Recherche de tous les accessoires dans le Stash (par type ou BDD)
+    let stashAccessories = currentGang.stash.filter(item => {
+        let itemName = typeof item === 'string' ? item : item.name;
+        let itemType = (typeof item === 'object' && item.type) ? item.type : '';
+        let lowerType = itemType.toLowerCase();
+        if (lowerType.includes('accessoire')) return true;
+        let foundDb = db.equipment.find(e => e.name === itemName);
+        return foundDb && foundDb.type && foundDb.type.toLowerCase().includes('accessoire');
+    });
+
+    // Affichage de la réserve SI des objets s'y trouvent OU si on est en mode campagne
+    if (stashAccessories.length > 0 || isCampaign) {
+        html += `<h4 style="color:var(--accent-cyan);">1. Réserve du Gang (Stash / Trading Post) :</h4>`;
+        if (stashAccessories.length === 0) {
+            html += `<p style="color:#888; font-size:12px; margin-bottom:10px;">Aucun accessoire disponible dans la réserve.</p>`;
+        } else {
+            stashAccessories.forEach(stItem => {
+                let itemName = typeof stItem === 'string' ? stItem : stItem.name;
+                let cleanName = itemName.replace(/'/g, "\\'");
+                html += `
+                    <div class="fighter-item">
+                        <span><strong>${itemName}</strong> <small style="color:#2ecc71;">(Réserve - 0 cr)</small></span>
+                        <button class="btn-cyan" onclick="addWeaponAccessoryFromStash(${weaponIdx}, '${cleanName}')">Équiper (Gratuit)</button>
+                    </div>
+                `;
+            });
+        }
+        html += `<hr style="margin:15px 0; border-color:#333;"><h4 style="color:var(--accent-purple);">2. Acheter sur la Liste de Clan :</h4>`;
+    }
+
+    let availableAccessories = db.equipment.filter(e => {
+        let eType = (e.type || '').toLowerCase();
+        if (!eType.includes('accessoire')) return false;
+        if (isMercOrBeast) return e.specific_to === tempFighter.charId;
+        if (isHiveScum) return e.is_hive_scum === true;
+        if (e.specific_to && e.specific_to !== tempFighter.charId) return false;
+        return e.is_gang === true;
+    });
+
+    if (availableAccessories.length === 0) {
+        html += `<p style="color:#888; font-size:12px;">Aucun accessoire de base disponible sur la liste de ce gang.</p>`;
+    } else {
+        availableAccessories.forEach(acc => {
+    let cost = acc.cost_credits || 0;
+    let canAfford = !isCampaign || ((currentGang.credits || 0) >= cost);
+    html += `
+        <div class="fighter-item ${!canAfford ? 'disabled' : ''}">
+            <span><strong>${acc.name}</strong> (${cost}c) - <small style="color:#aaa;">${acc.effect || ''}</small></span>
+            ${canAfford ? 
+                `<button onclick="addWeaponAccessory(${weaponIdx}, '${acc.id}')">${isCampaign ? `Acheter (${cost}c)` : 'Équiper'}</button>` : 
+                `<small style="color:#e74c3c;">Crédits insuffisants</small>`
+            }
+        </div>
+    `;
+});
+    }
+
+    openModal(`Accessoire pour ${weapon.name}`, html);
+}
+
+function addWeaponAccessory(weaponIdx, accId) {
+    const acc = db.equipment.find(e => e.id === accId || e.name === accId);
+    if (!acc || !tempFighter.weapons[weaponIdx]) return;
+
+    let newAcc = JSON.parse(JSON.stringify(acc));
+    newAcc.fromStash = false;
+    tempFighter.weapons[weaponIdx].accessory = newAcc;
+    closeModal();
+    renderFighterEdit(document.getElementById('main-content'));
+}
+
+function addWeaponAccessoryFromStash(weaponIdx, itemName) {
+    if (!currentGang || !currentGang.stash || !tempFighter.weapons[weaponIdx]) return;
+
+    let sIdx = currentGang.stash.findIndex(item => (typeof item === 'string' ? item : item.name) === itemName);
+    if (sIdx >= 0) {
+        currentGang.stash.splice(sIdx, 1);
+        let foundAcc = db.equipment.find(e => e.name === itemName);
+        let newAcc = foundAcc ? JSON.parse(JSON.stringify(foundAcc)) : { name: itemName, cost_credits: 0, type: "Accessoire" };
+        newAcc.fromStash = true;
+        tempFighter.weapons[weaponIdx].accessory = newAcc;
+        saveGangs();
+    }
+    closeModal();
+    renderFighterEdit(document.getElementById('main-content'));
+}
+
+function removeWeaponAccessory(weaponIdx) {
+    let weapon = tempFighter.weapons[weaponIdx];
+    if (!weapon || !weapon.accessory) return;
+
+    let acc = weapon.accessory;
+    let origFighter = (appState.editTarget !== null && currentGang.members[appState.editTarget]) ? currentGang.members[appState.editTarget] : null;
+    let wasOnOrig = origFighter && (origFighter.weapons || []).some(ow => ow.accessory && ow.accessory.name === acc.name);
+
+    if (acc.fromStash || (currentGang && currentGang.isEstablished && wasOnOrig && !acc.isDefault)) {
+        if (!currentGang.stash) currentGang.stash = [];
+        currentGang.stash.push({ name: acc.name, type: "Accessoire", cost: acc.cost_credits || acc.cost || 0 });
+        saveGangs();
+    }
+
+    weapon.accessory = null;
+    renderFighterEdit(document.getElementById('main-content'));
+}
 // ==========================================
 // SELECTION ET GESTION DES ARMURES & EQUIPEMENTS
 // ==========================================
@@ -1351,7 +1547,7 @@ function openSkillModal() {
             
             let isAllowed = true;
             if (isLeaderOrChampion) {
-                isAllowed = isPrimary || isSecondary;
+                isAllowed = isPrimary;
             }
 
             html += `
@@ -1455,19 +1651,43 @@ function saveFighter() {
         } else {
             let origFighter = currentGang.members[appState.editTarget];
             
-            (tempFighter.weapons || []).forEach(w => {
-                let wasOnOrig = (origFighter.weapons || []).some(ow => ow.name === w.name);
-                if (!wasOnOrig && !w.fromStash && !w.isDefault) creditsToPay += (w.cost_credits || 0);
-                if (w.accessory) {
-                    let wasAccOnOrig = (origFighter.weapons || []).some(ow => ow.accessory && ow.accessory.name === w.accessory.name);
-                    if (!wasAccOnOrig && !w.accessory.fromStash && !w.accessory.isDefault) creditsToPay += (w.accessory.cost_credits || 0);
-                }
-            });
+            const countNewItems = (tempList, origList, getItemName, getAcc) => {
+                let tempCounts = {};
+                (tempList || []).forEach(item => {
+                    if (getAcc) item = item.accessory;
+                    if (!item) return;
+                    if (!item.fromStash && !item.isDefault) {
+                        let n = getItemName(item);
+                        let cost = item.cost_credits || item.cost || 0;
+                        if (!tempCounts[n]) tempCounts[n] = { count: 0, cost: cost };
+                        tempCounts[n].count++;
+                    }
+                });
 
-            (tempFighter.equipment || []).forEach(e => {
-                let wasOnOrig = (origFighter.equipment || []).some(oe => oe.name === e.name);
-                if (!wasOnOrig && !e.fromStash && !e.isDefault) creditsToPay += (e.cost_credits || 0);
-            });
+                let origCounts = {};
+                (origList || []).forEach(item => {
+                    if (getAcc) item = item.accessory;
+                    if (!item) return;
+                    if (!item.fromStash && !item.isDefault) {
+                        let n = getItemName(item);
+                        if (!origCounts[n]) origCounts[n] = 0;
+                        origCounts[n]++;
+                    }
+                });
+
+                let totalNewCost = 0;
+                for (let n in tempCounts) {
+                    let diff = tempCounts[n].count - (origCounts[n] || 0);
+                    if (diff > 0) {
+                        totalNewCost += diff * tempCounts[n].cost;
+                    }
+                }
+                return totalNewCost;
+            };
+
+            creditsToPay += countNewItems(tempFighter.weapons, origFighter.weapons, w => w.name, false);
+            creditsToPay += countNewItems(tempFighter.weapons, origFighter.weapons, acc => acc.name, true);
+            creditsToPay += countNewItems(tempFighter.equipment, origFighter.equipment, e => e.name, false);
         }
 
         if (creditsToPay > 0) {
@@ -1488,7 +1708,6 @@ function saveFighter() {
     saveGangs();
     navigate('gang-manage');
 }
-
 function removeFighter(idx) {
     if (!confirm("Voulez-vous vraiment licencier ce combattant ?")) return;
     const m = currentGang.members[idx];
