@@ -200,10 +200,31 @@ function safeSave() {
 }
 
 function safeNavigate(target) {
-    if (typeof navigate === 'function') navigate(target);
-    else if (typeof navigateTo === 'function') navigateTo(target);
-}
+    // 1. Fermer toute modale ouverte
+    if (typeof closeModal === 'function') {
+        closeModal();
+    }
 
+    // 2. Masquer et réinitialiser le bandeau de jeu
+    const topBar = document.getElementById('top-bar');
+    if (topBar) {
+        topBar.innerHTML = '';
+        topBar.classList.add('hidden');
+        topBar.style.display = 'none';
+    }
+
+    // 3. Mettre à jour la vue globale
+    if (typeof appState !== 'undefined') {
+        appState.view = target;
+    }
+
+    // 4. Rediriger vers la page de destination
+    if (typeof navigate === 'function') {
+        navigate(target);
+    } else if (typeof navigateTo === 'function') {
+        navigateTo(target);
+    }
+}
 function getFighterXP(m) {
     if (m.xp !== undefined && m.xp !== null) return m.xp;
     if (typeof db !== 'undefined' && db.characters) {
@@ -514,7 +535,7 @@ function startGame() {
         currentGameRoster.push(m);
     });
 
-    gameTactics = JSON.parse(JSON.stringify((typeof db !== 'undefined' && db.characters && db.characters[0] && db.characters[0].tactics_cards) ? (currentGang.tactics || []) : []));
+    gameTactics = JSON.parse(JSON.stringify(currentGang.tactics || []));
     
     if (typeof appState !== 'undefined') appState.view = 'game-view';
     renderGameView(document.getElementById('main-content'));
@@ -932,6 +953,7 @@ function toggleTacticUsed(idx) {
 // 1. SÉQUENCE POST-BATAILLE
 // ==========================================
 function renderPostBattleView(container) {
+    if (typeof appState !== 'undefined') appState.view = 'post-battle';
     if (!container) container = document.getElementById('main-content');
     if (!container) return;
 
@@ -1123,10 +1145,17 @@ function applyInjury(fighterId) {
         } else {
             if (confirm(`${m.customName} est mort(e) ! Son équipement va être transféré dans la réserve du gang.`)) {
                 if (m.weapons) {
-                    m.weapons.forEach(w => {
-                        currentGang.stash.push({ name: w.name, type: "Arme", cost: w.cost || 0 });
-                    });
-                }
+    m.weapons.forEach(w => {
+        let wCost = w.cost_credits || w.cost || 0;
+        currentGang.stash.push({ name: w.name, type: "Arme", cost: wCost });
+        
+        // Restitution de l'accessoire s'il y en a un
+        if (w.accessory) {
+            let accCost = w.accessory.cost_credits || w.accessory.cost || 0;
+            currentGang.stash.push({ name: w.accessory.name, type: "Accessoire", cost: accCost });
+        }
+    });
+}
                 if (m.armor) currentGang.stash.push({ name: m.armor.name, type: "Armure", cost: m.armor.cost || 0 });
                 if (m.equipment) {
                     m.equipment.forEach(e => {
@@ -1195,6 +1224,7 @@ function startPostCycleView(container) {
 // 2. SÉQUENCE POST-CYCLE
 // ==========================================
 function renderPostCycleView(container) {
+    if (typeof appState !== 'undefined') appState.view = 'post-cycle';
     if (!container) container = document.getElementById('main-content');
     if (!container) return;
 
@@ -1721,14 +1751,15 @@ function confirmTradingPostFixedTP() {
 
 function renderTradingPostView() {
     let dbWeapons = (typeof db !== 'undefined' && db.weapons) ? db.weapons.filter(w => 
-    !w.is_merc_weapon && 
-    !w.default_for && 
-    !w.specific_to && 
-    !w.requires_equip
-) : [];
+        !w.is_merc_weapon && 
+        !w.default_for && 
+        !w.specific_to && 
+        !w.requires_equip
+    ) : [];
+    
     let dbEquip = (typeof db !== 'undefined' && db.equipment) ? db.equipment.filter(e => 
-    !e.specific_to
-) : [];
+        !e.specific_to
+    ) : [];
 
     let html = `
         <div style="background:#111; padding:10px; border-radius:5px; border:1px solid var(--accent-purple); margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
@@ -1776,7 +1807,7 @@ function renderTradingPostView() {
 
     html += `
             </div>
-            <h4>Équipements & Armures</h4>
+            <h4>Équipements & Accessoires</h4>
             <div style="display:grid; grid-template-columns:1fr; gap:8px; margin-bottom:15px;">
     `;
 
@@ -1785,14 +1816,16 @@ function renderTradingPostView() {
         let credCost = e.cost_credits || e.cost || e.price || 0;
         let canAfford = (currentGang.credits || 0) >= credCost && tradingPostSession.availableTP >= tpCost;
         let cleanName = e.name.replace(/'/g, "\\'");
+        let rawType = e.type || 'Équipement';
+        let cleanType = rawType.replace(/'/g, "\\'");
 
         html += `
             <div style="background:#1a1a1a; border:1px solid #333; padding:8px; border-radius:5px; display:flex; justify-content:space-between; align-items:center; ${!canAfford ? 'opacity:0.5;' : ''}">
                 <div>
-                    <strong style="color:#fff;">${e.name}</strong> <small style="color:#888;">(${e.type || 'Équipement'})</small><br>
+                    <strong style="color:#fff;">${e.name}</strong> <small style="color:#888;">(${rawType})</small><br>
                     <small style="color:#aaa;">Coût : ${credCost} cr | Rareté : <span style="color:var(--accent-cyan); font-weight:bold;">${tpCost} TP</span></small>
                 </div>
-                <button class="${canAfford ? 'btn btn-cyan' : 'btn'}" ${!canAfford ? 'disabled' : ''} style="padding:4px 10px; font-size:12px;" onclick="buyTradingPostItem('Équipement', '${cleanName}', ${credCost}, ${tpCost})">Acheter</button>
+                <button class="${canAfford ? 'btn btn-cyan' : 'btn'}" ${!canAfford ? 'disabled' : ''} style="padding:4px 10px; font-size:12px;" onclick="buyTradingPostItem('${cleanType}', '${cleanName}', ${credCost}, ${tpCost})">Acheter</button>
             </div>
         `;
     });
@@ -1817,11 +1850,34 @@ function buyTradingPostItem(category, itemName, credCost, tpCost) {
     currentGang.credits -= credCost;
     tradingPostSession.availableTP -= tpCost;
 
-    currentGang.stash.push({
-        name: itemName,
-        type: category,
-        cost: credCost
-    });
+    // Récupération de la définition complète en BDD
+    let itemDef = null;
+    if (typeof db !== 'undefined') {
+        if (category === 'Arme' && db.weapons) {
+            itemDef = db.weapons.find(w => w.name === itemName);
+        } else if (db.equipment) {
+            itemDef = db.equipment.find(e => e.name === itemName);
+        }
+    }
+
+    let stashItem = itemDef ? JSON.parse(JSON.stringify(itemDef)) : { name: itemName, cost: credCost };
+    stashItem.cost = credCost;
+
+    // Normalisation du type pour la compatibilité avec app.js
+    let lowerCat = (category || '').toLowerCase();
+    let lowerName = (itemName || '').toLowerCase();
+
+    if (lowerCat.includes('accessoire') || lowerName.includes('lunette') || lowerName.includes('viseur') || lowerName.includes('silencieux')) {
+        stashItem.type = "Accessoire d'arme";
+    } else if (lowerCat.includes('armure')) {
+        stashItem.type = "Armure";
+    } else if (category === 'Arme') {
+        stashItem.type = "Arme";
+    } else {
+        stashItem.type = stashItem.type || category || "Équipement";
+    }
+
+    currentGang.stash.push(stashItem);
 
     safeSave();
     renderTradingPostView();
@@ -2036,7 +2092,7 @@ function toggleFighterSkill(fighterId, skillName, add) {
     if (!m.skills) m.skills = [];
 
     if (add) {
-        if (!m.skills.some(s => (typeof s === 'string' ? s : s.name) !== skillName)) {
+        if (!m.skills.some(s => (typeof s === 'string' ? s : s.name) === skillName)) {
             let foundObj = null;
             if (typeof db !== 'undefined' && db.skills) {
                 for (let cat in db.skills) {
