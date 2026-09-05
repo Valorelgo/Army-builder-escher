@@ -625,20 +625,20 @@ function updateTopBar() {
         ? calculateGangReputation(currentGang) 
         : ((currentGang.reputation !== undefined) ? currentGang.reputation : 1);
 
-    // 5. Structure HTML complète identique sur tous les écrans hors partie
+    // 5. Structure HTML harmonisée
     topBar.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:6px 15px; background:var(--panel-bg, #1e1e1e); border-bottom:1px solid #333; box-sizing:border-box; color:#fff; font-size:13px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%; padding:6px 15px; background:var(--panel-bg, #1e1e1e); border-bottom:1px solid #333; box-sizing:border-box; color:#fff;">
             <div>
-                <strong>${(currentGang.name || 'Gang').toUpperCase()}</strong> | 
-                CRÉDITS : <strong style="color:#f39c12;">${currentGang.credits || 0} CR</strong> | 
-                GANG RATING : <strong style="color:var(--accent-purple, #9b59b6);">${gangRating} CR</strong> | 
-                RICHESSE : <strong style="color:#f39c12;">${gangWealth} CR</strong> | 
-                RÉPUTATION : <strong style="color:#2ecc71;">${totalRep}</strong>
+                <strong>${currentGang.name || 'Gang'}</strong> | 
+                Crédits : <strong style="color:var(--accent-cyan, #00d2d3);">${currentGang.credits || 0} cr</strong> | 
+                Gang Rating : <strong style="color:var(--accent-purple, #9b59b6);">${gangRating} cr</strong> | 
+                Richesse : <strong style="color:#f39c12;">${gangWealth} cr</strong> | 
+                Réputation : <strong style="color:#2ecc71;">${totalRep}</strong>
             </div>
             <div style="display:flex; gap:10px;">
-                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openStashModal()">📦 RÉSERVE (STASH)</button>
-                <button class="btn" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openTerritoriesModal()">🚩 TERRITOIRES</button>
-                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openMatchHistoryModal()">📜 HISTORIQUE</button>
+                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openStashModal()">📦 Réserve (Stash)</button>
+                <button class="btn" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openTerritoriesModal()">🚩 Territoires</button>
+                <button class="btn btn-cyan" style="padding:3px 10px; font-size:12px; cursor:pointer;" onclick="openMatchHistoryModal()">📜 Historique</button>
             </div>
         </div>
     `;
