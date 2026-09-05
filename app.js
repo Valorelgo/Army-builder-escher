@@ -233,7 +233,7 @@ const db = {
             { id: "sk_instoppable", name: "Unstoppable", desc: "A l'activation, test de Willpower : si réussi, récupère 1 PV." }
         ],
         combat: [
-            { id: "sk_berserker", name: "Berserker", desc: "Condition frenzy." },
+            { id: "sk_berserker", name: "Berserker", desc: "Condition frénésie." },
             { id: "sk_maitre_combat", name: "Combat master", desc: "Pas de malus d'interférence pour toucher. Peut toujours assister quel que soit le nb d'ennemis." },
             { id: "sk_coup_boule", name: "Headbutt", desc: "Arme intégrée : engagé, F+1, L:1, attaques additionnelles (1)." },
             { id: "sk_coups_puissants", name: "Heavy blows", desc: "Arme lourde au close = +1 Force." },
